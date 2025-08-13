@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from .models import Product
+from account.models import Seller
 class ProductSerializer(serializers.HyperlinkedModelSerializer):
     price = serializers.DecimalField(
         max_digits=10, decimal_places=2,
@@ -39,3 +40,7 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
             'name': {'help_text': 'Product name'},
             'description': {'help_text': 'Product description'},
         }
+    def create(self, validated_data):
+        seller = Seller.objects.get(user=self.context['request'].user)  # ✅ đúng kiểu
+        validated_data['seller'] = seller
+        return super().create(validated_data)

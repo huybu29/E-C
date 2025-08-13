@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
-import api from "../services/api";
-
+import api from "../../services/api";
+import { useNavigate } from "react-router-dom";
 export default function OrderListPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOrders = async () => {
@@ -55,6 +56,14 @@ export default function OrderListPage() {
                 {Number(order.total_price).toLocaleString()} đ
               </td>
               <td className="border border-gray-300 px-4 py-2">{order.status || "Chưa cập nhật"}</td>
+              <td className="border border-gray-300 px-4 py-2 text-center">
+              <button
+                onClick={() => navigate(`/order/${order.id}`)}
+                className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-400"
+              >
+                Xem chi tiết
+              </button>
+            </td>
             </tr>
           ))}
         </tbody>

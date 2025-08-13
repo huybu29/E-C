@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Profile
+from .models import Profile, Seller
 
 # Serializer cho User
 class UserSerializer(serializers.ModelSerializer):
@@ -34,5 +34,7 @@ class SellerSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context['request'].user
+        validated_data.pop('user', None)  # loại bỏ nếu có
         seller = Seller.objects.create(user=user, **validated_data)
         return seller
+

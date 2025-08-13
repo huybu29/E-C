@@ -24,6 +24,7 @@ export default function Navbar() {
     <nav className="fixed top-0 left-0 right-0 bg-white shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         {/* Logo */}
+        
         <Link
           to="/"
           className="text-2xl font-bold text-blue-600 hover:text-blue-800 transition"
@@ -74,6 +75,12 @@ export default function Navbar() {
             </>
           ) : (
             <>
+            <Link
+            to="/seller/"
+            className="text-2xl font-bold text-blue-600 hover:text-blue-800 transition"
+          >
+            Seller
+            </Link>
               <Link
                 to="/checkout"
                 className="px-3 py-1 rounded-md text-gray-700 font-medium hover:bg-blue-100 hover:text-blue-700 transition"

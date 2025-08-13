@@ -1,9 +1,9 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
-from .models import Profile
-from .serializers import ProfileSerializer, UserSerializer
-
+from .models import Profile, Seller
+from .serializers import ProfileSerializer, UserSerializer, SellerSerializer
+from rest_framework import generics, permissions
 # API quản lý Profile
 class ProfileViewSet(viewsets.ModelViewSet):
     serializer_class = ProfileSerializer
@@ -22,9 +22,9 @@ class RegisterViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
-class SellerRegisterView(generics.CreateAPIView):
+class SellerRegisterView(viewsets.ModelViewSet):
     serializer_class = SellerSerializer
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         return Seller.objects.filter(user=self.request.user)
