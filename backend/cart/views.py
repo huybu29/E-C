@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
 from rest_framework import viewsets, status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated,AllowAny
 from rest_framework.decorators import action
 from .models import Cart, CartItem
 from .serializers import CartSerializer, CartItemSerializer
@@ -21,7 +21,13 @@ class CartItemViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         cart, _ = Cart.objects.get_or_create(user=self.request.user)
         return CartItem.objects.filter(cart=cart)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
     def create(self, request, *args, **kwargs):
         user = request.user
         cart, _ = Cart.objects.get_or_create(user=user)

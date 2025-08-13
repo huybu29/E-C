@@ -21,7 +21,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
-
+from django.conf.urls.static import static
 class APIRootView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -31,7 +31,7 @@ class APIRootView(APIView):
             'product': request.build_absolute_uri('/api/product/'),
             'order': request.build_absolute_uri('/api/order/'),
             'cart': request.build_absolute_uri('/api/cart/'),
-           
+            'category': request.build_absolute_uri('/api/category/'),
         })
 
 urlpatterns = [
@@ -43,4 +43,6 @@ urlpatterns = [
     path('api/cart/', include('cart.urls')),
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('api/category/', include('category.urls')),
 ]
+urlpatterns += static('media/', document_root='media/') 
