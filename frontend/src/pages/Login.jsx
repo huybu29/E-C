@@ -47,7 +47,7 @@ function Login({ onLogin }) {
 
 
   return (
-    <form
+    <form autoComplete="off"
       onSubmit={handleSubmit}
       className="bg-white p-6 rounded shadow-md w-full max-w-sm mx-auto mt-[200px] border border-gray-200 space-y-4"
     >

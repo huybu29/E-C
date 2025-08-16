@@ -1,13 +1,14 @@
 from rest_framework import viewsets, filters
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from .models import Product
-from .serializers import ProductSerializer
+from .serializers import ProductSerializer, ReviewSerializer
 from .permissions import IsSellerOrReadOnly
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from account.models import Seller
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions  import PermissionDenied
+from .models import Review
 class ProductViewSet(viewsets.ModelViewSet):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
@@ -68,3 +69,10 @@ class SellerProductViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Bạn chưa đăng ký làm người bán.")
 
         serializer.save(seller=seller)
+class ReviewViewSet(viewsets.ModelViewSet):
+    queryset = Review.objects.all()
+    serializer_class = ReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

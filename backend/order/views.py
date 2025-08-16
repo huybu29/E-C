@@ -20,12 +20,13 @@ class OrderViewSet(viewsets.ModelViewSet):
         user = request.user
         cart, created = Cart.objects.get_or_create(user=user)
         cart_items = CartItem.objects.filter(cart=cart)
-
+        address = request.data.get('address', '')
+        shipping_method = request.data.get('shipping_method', '')
         if not cart_items.exists():
             return Response({'error': 'Cart is empty'}, status=status.HTTP_400_BAD_REQUEST)
 
         # Tạo đơn hàng
-        order = Order.objects.create(user=user)
+        order = Order.objects.create(user=user, shipping_method=shipping_method)
 
         total = 0
         for item in cart_items:
@@ -33,11 +34,16 @@ class OrderViewSet(viewsets.ModelViewSet):
                 order=order,
                 product=item.product,
                 quantity=item.quantity,
-                price=item.product.price  # hoặc tính động
+                price=item.product.price,
+                 # hoặc tính động
             )
+            
             total += item.product.price * item.quantity
 
         # Cập nhật tổng giá đơn hàng
+        order.shipping_cost = Order.calculate_shipping_cost(shipping_method)
+        total += order.shipping_cost
+        order.address = address
         order.total_price = total
         order.save()
 

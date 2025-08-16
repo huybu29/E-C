@@ -22,6 +22,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import permissions
 from django.conf.urls.static import static
+
 class APIRootView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -44,5 +45,6 @@ urlpatterns = [
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('api/category/', include('category.urls')),
+  
 ]
 urlpatterns += static('media/', document_root='media/') 

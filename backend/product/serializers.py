@@ -44,3 +44,12 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
         seller = Seller.objects.get(user=self.context['request'].user)  # ✅ đúng kiểu
         validated_data['seller'] = seller
         return super().create(validated_data)
+from .models import Review
+
+class ReviewSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.username', read_only=True)
+
+    class Meta:
+        model = Review
+        fields = ['id', 'product', 'user', 'user_name', 'rating', 'comment', 'image', 'created_at']
+        read_only_fields = ['user']
