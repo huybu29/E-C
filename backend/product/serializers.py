@@ -34,7 +34,7 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
         model = Product
         fields = [
             'url', 'id', 'name', 'description', 'price', 'stock',
-            'image', 'is_active', 'created_at', 'updated_at', 'category_name'
+            'image', 'is_active', 'created_at', 'updated_at', 'category_name', 'average_rating', 'total_reviews'
         ]
         extra_kwargs = {
             'name': {'help_text': 'Product name'},

@@ -15,9 +15,11 @@ class Product(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    average_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
+    total_reviews = models.PositiveIntegerField(default=0)
     def __str__(self):
         return self.name
+    
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
@@ -27,12 +29,11 @@ class Review(models.Model):
     image = models.ImageField(upload_to='reviews/', null=True, blank=True)
     def __str__(self):
         return f"Review for {self.product.name} by {self.user.username}"
-    class Meta:
-        unique_together = ("product", "user")  # Một người chỉ review 1 lần
-
+    
     def save(self, *args, **kwargs):
         super().save(*args, **kwargs)
-        # Cập nhật điểm trung bình sản phẩm
+        self.update_product_rating()
+    def update_product_rating(self):
         reviews = Review.objects.filter(product=self.product)
         avg = reviews.aggregate(models.Avg('rating'))['rating__avg'] or 0
         self.product.average_rating = round(avg, 1)

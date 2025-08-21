@@ -1,10 +1,12 @@
 import React, { useState } from "react";
-import axios from "axios";
-import api from "../services/api"; // axios instance
+import api from "../services/api";
+import { useNavigate, Link } from "react-router-dom";
+
 function Register() {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [message, setMessage] = useState({ text: "", type: "" });
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -15,7 +17,6 @@ function Register() {
       setMessage({ text: "Vui lòng điền đầy đủ thông tin", type: "error" });
       return false;
     }
-    // Regex kiểm tra email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(form.email)) {
       setMessage({ text: "Email không hợp lệ", type: "error" });
@@ -34,12 +35,11 @@ function Register() {
 
     setLoading(true);
     try {
-      const res = await api.post("/account/register/", form);
-      
+      await api.post("/account/register/", form);
       setMessage({ text: "Đăng ký thành công!", type: "success" });
-      setForm({ username: "", email: "", password: "" }); // reset form
+      setForm({ username: "", email: "", password: "" });
+      navigate("/login");
     } catch (err) {
-      console.log(form)
       const errorMsg =
         err.response?.data?.username?.[0] ||
         err.response?.data?.email?.[0] ||
@@ -51,58 +51,82 @@ function Register() {
   };
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white p-6 rounded shadow-md w-full max-w-sm mx-auto space-y-4"
-    >
-      <input
-        name="username"
-        placeholder="Username"
-        value={form.username}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
+    <div className="min-h-screen bg-gradient-to-br from-purple-100 via-purple-200 to-purple-300 flex flex-col">
+      {/* Thanh tiêu đề */}
+      <div className="w-full bg-gradient-to-r from-purple-600 via-purple-700 to-purple-900 shadow-md px-6 py-4 flex items-center">
+        <Link
+          to="/"
+          className="text-[28px] font-bold text-white hover:text-gray-200 mx-4"
+        >
+          MyShop
+        </Link>
+        <h1 className="text-[28px] font-semibold text-white">Đăng ký</h1>
+      </div>
 
-      <input
-        name="email"
-        placeholder="Email"
-        type="email"
-        value={form.email}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-
-      <input
-        name="password"
-        type="password"
-        placeholder="Password"
-        value={form.password}
-        onChange={handleChange}
-        className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-      />
-
-      <button
-        type="submit"
-        disabled={loading}
-        className={`w-full text-white font-bold py-2 px-4 rounded ${
-          loading
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-500 hover:bg-blue-600 cursor-pointer"
-        }`}
+      {/* Form đăng ký */}
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-sm mx-auto mt-[100px] space-y-4 border border-purple-200"
       >
-        {loading ? "Đang xử lý..." : "Register"}
-      </button>
+        <input
+          name="username"
+          placeholder="Username"
+          value={form.username}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
 
-      {message.text && (
-        <p
-          className={`text-center text-sm ${
-            message.type === "success" ? "text-green-500" : "text-red-500"
+        <input
+          name="email"
+          placeholder="Email"
+          type="email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full px-4 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+        />
+
+        <button
+          type="submit"
+          disabled={loading}
+          className={`w-full text-white font-bold py-2 px-4 rounded-lg ${
+            loading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:opacity-90 cursor-pointer"
           }`}
         >
-          {message.text}
-        </p>
-      )}
-    </form>
+          {loading ? "Đang xử lý..." : "Đăng ký"}
+        </button>
+
+        <div className="text-center text-gray-600">
+          <span>Đã có tài khoản?</span>
+          <Link
+            to="/login"
+            className="ml-2 font-bold text-purple-600 hover:text-purple-800"
+          >
+            Đăng nhập
+          </Link>
+        </div>
+
+        {message.text && (
+          <p
+            className={`text-center text-sm ${
+              message.type === "success" ? "text-green-500" : "text-red-500"
+            }`}
+          >
+            {message.text}
+          </p>
+        )}
+      </form>
+    </div>
   );
 }
 

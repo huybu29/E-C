@@ -9,36 +9,72 @@ from account.models import Seller
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions  import PermissionDenied
 from .models import Review
+from django.db.models import Sum, F
+from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
+
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsSellerOrReadOnly]
+   
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['name', 'description']
+    search_fields = ['name']
     ordering_fields = ['price', 'created_at']
     ordering = ['-created_at']
 
-    def perform_create(self, serializer):
-        seller = Seller.objects.get(user=self.request.user)  # lấy Seller instance từ User
-        serializer.save(seller=seller)
-
     def get_queryset(self):
-        queryset = Product.objects.all()
-        search = self.request.query_params.get('search', None)
-        category = self.request.query_params.get('category', None)
+        queryset = Product.objects.filter(is_active=True)
+        keyword = self.request.query_params.get('keyword')
+        categories = self.request.query_params.get('categories')
+        min_price = self.request.query_params.get('min_price')
+        max_price = self.request.query_params.get('max_price')
+        rating = self.request.query_params.get('rating')
+        sort = self.request.query_params.get('sort')  # filter ngang
 
-        if search:
-            queryset = queryset.filter(name__icontains=search)
-        if category:
-            queryset = queryset.filter(category_id=category)  # Lọc theo category_id
+        # Search theo từ khóa
+        if keyword:
+            queryset = queryset.filter(Q(name__icontains=keyword))
+
+        # Filter theo categories
+        if categories:
+            ids = categories.split(',')
+            queryset = queryset.filter(category__id__in=ids)
+
+        # Filter theo khoảng giá
+        if min_price:
+            queryset = queryset.filter(price__gte=min_price)
+        if max_price:
+            queryset = queryset.filter(price__lte=max_price)
+
+        # Filter theo rating
+        if rating:
+            queryset = queryset.filter(average_rating__gte=rating)
+
+        # Filter ngang (sort)
+        if sort == 'relevance':
+            queryset = queryset.order_by('-id')  # mặc định
+        elif sort == 'bestselling':
+            queryset = queryset.annotate(total_sold=Sum('orderitem__quantity')).order_by('-total_sold')
+        elif sort == 'newest':
+            queryset = queryset.order_by('-created_at')
+        elif sort == 'price_asc':
+            queryset = queryset.order_by('price')
+        elif sort == 'price_desc':
+            queryset = queryset.order_by('-price')
 
         return queryset
+
+    def perform_create(self, serializer):
+        seller = Seller.objects.get(user=self.request.user)
+        serializer.save(seller=seller)
+
+
 class SellerProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
+    
 
     def get_queryset(self):
-        # Lấy seller tương ứng với user
         try:
             seller = Seller.objects.get(user=self.request.user)
         except Seller.DoesNotExist:
@@ -47,32 +83,30 @@ class SellerProductViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         product = self.get_object()
-
         try:
             seller = Seller.objects.get(user=self.request.user)
         except Seller.DoesNotExist:
             raise PermissionDenied("Bạn không phải là người bán.")
-
         if product.seller != seller:
             raise PermissionDenied("Bạn không có quyền sửa sản phẩm này.")
-
         serializer.save()
 
-    def get_object(self):
-        obj = get_object_or_404(Product, pk=self.kwargs["pk"])
-        
-        return obj
     def perform_create(self, serializer):
         try:
             seller = Seller.objects.get(user=self.request.user)
         except Seller.DoesNotExist:
             raise PermissionDenied("Bạn chưa đăng ký làm người bán.")
-
         serializer.save(seller=seller)
-class ReviewViewSet(viewsets.ModelViewSet):
-    queryset = Review.objects.all()
-    serializer_class = ReviewSerializer
-    permission_classes = [IsAuthenticated]
 
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        product_id = self.request.query_params.get("product")
+        if product_id:
+            return Review.objects.filter(product_id=product_id)
+        return Review.objects.all()

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+
 export default function OrderListPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -10,7 +11,7 @@ export default function OrderListPage() {
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const res = await api.get("/order/orders/"); // endpoint backend lấy list order của user
+        const res = await api.get("/order/orders/");
         setOrders(res.data);
       } catch (err) {
         console.error("Lỗi lấy danh sách đơn hàng:", err);
@@ -28,46 +29,59 @@ export default function OrderListPage() {
     return <p className="text-center mt-6">Bạn chưa có đơn hàng nào.</p>;
 
   return (
-    <div className="max-w-5xl mx-auto p-6 bg-white rounded shadow mt-6">
-      <h1 className="text-3xl font-bold mb-6 text-gray-800">Danh sách đơn hàng</h1>
+    <div className="max-w-6xl my-[100px] mx-auto p-8 bg-white rounded-2xl shadow-lg">
+      <h1 className="text-3xl font-bold mb-8 text-gray-900">🛒 Danh sách đơn hàng</h1>
 
-      <table className="w-full border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="border border-gray-300 px-4 py-2 text-left">Mã đơn</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">Ngày tạo</th>
-            <th className="border border-gray-300 px-4 py-2 text-right">Tổng tiền</th>
-            <th className="border border-gray-300 px-4 py-2 text-left">Trạng thái</th>
-          </tr>
-        </thead>
-        <tbody>
-          {orders.map((order) => (
-            <tr
-              key={order.id}
-              className="hover:bg-gray-50 cursor-pointer"
-              // Bạn có thể thêm onClick để xem chi tiết
-              // onClick={() => navigate(`/orders/${order.id}`)}
-            >
-              <td className="border border-gray-300 px-4 py-2">{order.id}</td>
-              <td className="border border-gray-300 px-4 py-2">
-                {new Date(order.created_at).toLocaleDateString()}
-              </td>
-              <td className="border border-gray-300 px-4 py-2 text-right">
-                {Number(order.total_price).toLocaleString()} đ
-              </td>
-              <td className="border border-gray-300 px-4 py-2">{order.status || "Chưa cập nhật"}</td>
-              <td className="border border-gray-300 px-4 py-2 text-center">
-              <button
-                onClick={() => navigate(`/order/${order.id}`)}
-                className="px-2 py-1 bg-blue-500 text-white rounded hover:bg-blue-400"
-              >
-                Xem chi tiết
-              </button>
-            </td>
+      <div className="overflow-x-auto rounded-lg shadow-md">
+        <table className="w-full text-sm text-left text-gray-700">
+          <thead className="bg-gradient-to-r from-purple-200 to-purple-100 text-gray-900">
+            <tr>
+              <th className="px-6 py-3 font-semibold">Mã đơn</th>
+              <th className="px-6 py-3 font-semibold">Ngày tạo</th>
+              <th className="px-6 py-3 font-semibold text-right">Tổng tiền</th>
+              <th className="px-6 py-3 font-semibold">Trạng thái</th>
+              <th className="px-6 py-3 font-semibold text-center">Thao tác</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {orders.map((order) => (
+              <tr
+                key={order.id}
+                className="hover:bg-purple-50 transition cursor-pointer"
+              >
+                <td className="px-6 py-3">{order.id}</td>
+                <td className="px-6 py-3">
+                  {new Date(order.created_at).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-3 text-right font-medium text-purple-700">
+                  {Number(order.total_price).toLocaleString()} đ
+                </td>
+                <td className="px-6 py-3">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-medium ${
+                      order.status === "Hoàn tất"
+                        ? "bg-green-100 text-green-700"
+                        : order.status === "Đang xử lý"
+                        ? "bg-yellow-100 text-yellow-700"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {order.status || "Chưa cập nhật"}
+                  </span>
+                </td>
+                <td className="px-6 py-3 text-center">
+                  <button
+                    onClick={() => navigate(`/order/${order.id}`)}
+                    className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg shadow hover:opacity-90 transition"
+                  >
+                    Xem chi tiết
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

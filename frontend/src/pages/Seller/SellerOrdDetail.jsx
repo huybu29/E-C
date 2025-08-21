@@ -56,37 +56,38 @@ export default function SellerOrderDetailPage() {
     }
   };
 
-  if (loading) return <p>Đang tải...</p>;
-  if (!order) return <p>Không tìm thấy đơn hàng</p>;
+  if (loading) return <p className="text-center mt-10 text-blue-700">Đang tải...</p>;
+  if (!order) return <p className="text-center mt-10 text-red-500">Không tìm thấy đơn hàng</p>;
 
   return (
     <SellerPage>
-      <div className="p-6 bg-white rounded shadow flex-1">
-        <h1 className="text-2xl font-bold mb-4">Chi tiết đơn hàng #{order.id}</h1>
+      <div className="p-6 bg-white rounded-xl shadow-lg flex-1">
+        <h1 className="text-3xl font-bold mb-6 text-blue-700">Chi tiết đơn hàng #{order.id}</h1>
 
-        <div className="mb-4">
-          <p>
-            <strong>Khách hàng:</strong> {order.user.username}
+        <div className="mb-6 p-4 bg-blue-50 rounded-lg shadow-inner">
+          <p className="mb-1">
+            <strong>Khách hàng:</strong>{" "}
+            <span className="text-blue-800">{order.user.username}</span>
           </p>
-          <p>
-            <strong>Tổng tiền:</strong> {order.total_price} ₫
+          <p className="mb-1">
+            <strong>Tổng tiền:</strong> {order.total_price.toLocaleString()} ₫
           </p>
-          <p>
+          <p className="mb-1">
             <strong>Ngày tạo:</strong> {new Date(order.created_at).toLocaleString()}
           </p>
-          <p>
+          <p className="mb-2">
             <strong>Trạng thái:</strong>{" "}
             <span className={getStatusColor(order.status)}>{order.status}</span>
           </p>
 
           {/* Dropdown cập nhật trạng thái */}
           <div className="mt-2 flex items-center gap-2">
-            <label className="font-semibold">Cập nhật trạng thái:</label>
+            <label className="font-semibold text-blue-700">Cập nhật trạng thái:</label>
             <select
               value={order.status}
               onChange={(e) => updateStatus(e.target.value)}
               disabled={updating}
-              className="border p-1 rounded"
+              className="border border-blue-300 p-1 rounded focus:ring-2 focus:ring-blue-400"
             >
               <option value="pending">Đang chờ</option>
               <option value="processing">Đang xử lý</option>
@@ -98,35 +99,42 @@ export default function SellerOrderDetailPage() {
           </div>
         </div>
 
-        <h2 className="text-xl font-semibold mt-4 mb-2">Sản phẩm của shop bạn</h2>
-        <table className="w-full border-collapse border">
-          <thead>
-            <tr className="bg-gray-200">
-              <th className="border p-2">Ảnh</th>
-              <th className="border p-2">Tên</th>
-              <th className="border p-2">Giá</th>
-              <th className="border p-2">Số lượng</th>
-              <th className="border p-2">Thành tiền</th>
-            </tr>
-          </thead>
-          <tbody>
-            {order.items.map((item) => (
-              <tr key={item.id}>
-                <td className="border p-2 text-center">
-                  <img
-                    src={item.product.image}
-                    alt={item.product.name}
-                    className="w-16 h-16 object-cover mx-auto"
-                  />
-                </td>
-                <td className="border p-2">{item.product.name}</td>
-                <td className="border p-2">{item.price} ₫</td>
-                <td className="border p-2">{item.quantity}</td>
-                <td className="border p-2">{item.price * item.quantity} ₫</td>
+        <h2 className="text-2xl font-semibold mb-4 text-blue-700">Sản phẩm của shop bạn</h2>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse rounded-lg overflow-hidden shadow-md">
+            <thead className="bg-blue-100">
+              <tr>
+                <th className="border p-2 text-left">Ảnh</th>
+                <th className="border p-2 text-left">Tên</th>
+                <th className="border p-2 text-left">Giá</th>
+                <th className="border p-2 text-left">Số lượng</th>
+                <th className="border p-2 text-left">Thành tiền</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {order.items.map((item) => (
+                <tr
+                  key={item.id}
+                  className="hover:bg-blue-50 transition-colors"
+                >
+                  <td className="border p-2 text-center">
+                    <img
+                      src={item.product.image}
+                      alt={item.product.name}
+                      className="w-16 h-16 object-cover mx-auto rounded"
+                    />
+                  </td>
+                  <td className="border p-2">{item.product.name}</td>
+                  <td className="border p-2">{item.price.toLocaleString()} ₫</td>
+                  <td className="border p-2">{item.quantity}</td>
+                  <td className="border p-2">
+                    {(item.price * item.quantity).toLocaleString()} ₫
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </SellerPage>
   );
