@@ -12,6 +12,8 @@ from .models import Review
 from django.db.models import Sum, F
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
+from rest_framework.decorators import action
+from rest_framework.response import Response    
 
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
@@ -23,11 +25,11 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True)
+        queryset = Product.objects.filter(is_active=True, status="approved")
         keyword = self.request.query_params.get('keyword')
         categories = self.request.query_params.get('categories')
         min_price = self.request.query_params.get('min_price')
-        max_price = self.request.query_params.get('max_price')
+        max_price = self.request.query_params.get('max_price')  
         rating = self.request.query_params.get('rating')
         sort = self.request.query_params.get('sort')  # filter ngang
 
@@ -89,7 +91,7 @@ class SellerProductViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Bạn không phải là người bán.")
         if product.seller != seller:
             raise PermissionDenied("Bạn không có quyền sửa sản phẩm này.")
-        serializer.save()
+        serializer.save(seller=seller, status="pending")
 
     def perform_create(self, serializer):
         try:
@@ -101,7 +103,7 @@ class SellerProductViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-    
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -110,3 +112,13 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if product_id:
             return Review.objects.filter(product_id=product_id)
         return Review.objects.all()
+
+    @action(detail=True, methods=["post"], url_path="reply")
+    def reply(self, request, pk=None):
+        review = self.get_object()
+        reply_text = request.data.get("reply")
+        if not reply_text:
+            return Response({"error": "Nội dung reply không được để trống"}, status=400)
+        review.reply = reply_text
+        review.save()
+        return Response(self.get_serializer(review).data)

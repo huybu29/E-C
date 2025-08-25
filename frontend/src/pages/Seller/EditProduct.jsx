@@ -14,28 +14,59 @@ export default function EditProductPage() {
     image: null,
     imageUrl: "",
   });
+  const [reviews, setReviews] = useState([]);
+  const [reply, setReply] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchProduct = async () => {
-      try {
-        const res = await API.get(`/product/${id}/`);
-        setProduct({
-          name: res.data.name,
-          price: res.data.price,
-          stock: res.data.stock,
-          description: res.data.description || "",
-          image: null,
-          imageUrl: res.data.image,
-        });
-      } catch (err) {
-        console.error("Lỗi tải sản phẩm:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchProduct();
+    fetchReviews();
   }, [id]);
+
+  const fetchProduct = async () => {
+    try {
+      const res = await API.get(`/product/${id}/`);
+      setProduct({
+        name: res.data.name,
+        price: res.data.price,
+        stock: res.data.stock,
+        description: res.data.description || "",
+        image: null,
+        imageUrl: res.data.image,
+      });
+    } catch (err) {
+      console.error("Lỗi tải sản phẩm:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchReviews = async () => {
+    try {
+      const res = await API.get(`/product/reviews/?product=${id}`);
+      setReviews(res.data);
+    } catch (err) {
+      console.error("Lỗi tải đánh giá:", err);
+    }
+  };
+
+  const handleReplyChange = (reviewId, value) => {
+    setReply((prev) => ({ ...prev, [reviewId]: value }));
+  };
+
+  const handleReplySubmit = async (reviewId) => {
+    try {
+      await API.post(`/product/reviews/${reviewId}/reply/`, {
+        reply: reply[reviewId],
+      });
+      alert("Đã trả lời phản hồi!");
+      fetchReviews();
+      setReply((prev) => ({ ...prev, [reviewId]: "" }));
+    } catch (err) {
+      console.error("Lỗi gửi phản hồi:", err);
+      alert("Không thể gửi phản hồi");
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -76,10 +107,13 @@ export default function EditProductPage() {
   if (loading) return <p className="text-center mt-10 text-blue-700">Đang tải dữ liệu...</p>;
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-6 mt-6">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-700">✏️ Chỉnh sửa sản phẩm</h1>
+    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6 mt-6">
+      <h1 className="text-3xl font-bold mb-6 text-center text-blue-700">
+        ✏️ Chỉnh sửa sản phẩm & Quản lý đánh giá
+      </h1>
 
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Form chỉnh sửa sản phẩm */}
+      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
         {/* Cột trái */}
         <div className="space-y-4">
           <div>
@@ -167,6 +201,49 @@ export default function EditProductPage() {
           </button>
         </div>
       </form>
+
+      {/* Danh sách đánh giá */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold text-blue-700 mb-4">⭐ Đánh giá của khách hàng</h2>
+        {reviews.length === 0 ? (
+          <p className="text-gray-500">Chưa có đánh giá nào.</p>
+        ) : (
+          <div className="space-y-6">
+            {reviews.map((r) => (
+              <div key={r.id} className="border p-4 rounded-lg shadow-sm">
+                <p className="font-semibold text-gray-800">
+                  {r.user_name} - <span className="text-yellow-500">{"★".repeat(r.rating)}</span>
+                </p>
+                <p className="text-gray-700 mt-1">{r.comment}</p>
+
+                {/* Hiển thị phản hồi của seller */}
+                {r.reply && (
+                  <p className="mt-2 text-sm text-blue-600">
+                    💬 Phản hồi của bạn: {r.reply}
+                  </p>
+                )}
+
+                {/* Form trả lời */}
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Viết phản hồi..."
+                    value={reply[r.id] || ""}
+                    onChange={(e) => handleReplyChange(r.id, e.target.value)}
+                    className="flex-1 border rounded-lg p-2 text-sm"
+                  />
+                  <button
+                    onClick={() => handleReplySubmit(r.id)}
+                    className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
+                  >
+                    Gửi
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

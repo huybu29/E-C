@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Product
 from account.models import Seller
+
 class ProductSerializer(serializers.HyperlinkedModelSerializer):
     price = serializers.DecimalField(
         max_digits=10, decimal_places=2,
@@ -34,7 +35,7 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
         model = Product
         fields = [
             'url', 'id', 'name', 'description', 'price', 'stock',
-            'image', 'is_active', 'created_at', 'updated_at', 'category_name', 'average_rating', 'total_reviews'
+            'image', 'is_active', 'created_at', 'updated_at', 'category_name', 'status', 'average_rating', 'total_reviews'
         ]
         extra_kwargs = {
             'name': {'help_text': 'Product name'},
@@ -44,6 +45,7 @@ class ProductSerializer(serializers.HyperlinkedModelSerializer):
         seller = Seller.objects.get(user=self.context['request'].user)  # ✅ đúng kiểu
         validated_data['seller'] = seller
         return super().create(validated_data)
+
 from .models import Review
 
 class ReviewSerializer(serializers.ModelSerializer):
@@ -51,5 +53,5 @@ class ReviewSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Review
-        fields = ['id', 'product', 'user', 'user_name', 'rating', 'comment', 'image', 'created_at']
+        fields = ['id', 'product', 'user', 'user_name', 'rating', 'comment','reply', 'image', 'created_at']
         read_only_fields = ['user']

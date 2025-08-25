@@ -12,16 +12,17 @@ class Order(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     status = models.CharField(max_length=20, default='pending')
-    total_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    total_price = models.IntegerField(default=0)
     address = models.CharField(max_length=255, blank=True)
     shipping_method=models.CharField(
         max_length=20,
         choices=SHIPPING_METHOD_CHOICE.items(),
         default='standard'
     )
-    shipping_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    shipping_cost = models.DecimalField(max_digits=14, decimal_places=2, default=0)
     def __str__(self):
         return f"Order #{self.id} by {self.user.username}"
+    @staticmethod
     def calculate_shipping_cost(method):
         if method == 'express':
             return 30000  # 30k VND

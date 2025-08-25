@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+
 import API from "../../services/api";
 import SellerPage from "./SellerPage";
 
@@ -16,7 +17,7 @@ export default function SellerProductsPage() {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const res = await API.get("/product/seller/");
+      const res = await API.get("product/seller/");
       setProducts(res.data);
     } catch (err) {
       console.error("Lỗi tải sản phẩm:", err);
@@ -28,7 +29,7 @@ export default function SellerProductsPage() {
   const handleDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
       try {
-        await API.delete(`/product/${id}/`);
+        await API.delete(`account/admin/products/${id}/`);
         fetchProducts();
       } catch (err) {
         console.error("Lỗi xóa sản phẩm:", err);

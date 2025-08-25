@@ -101,7 +101,7 @@ function Login() {
         <div className="text-center text-gray-600">
           <span>Chưa có tài khoản?</span>
           <Link
-            to="/register/"
+            to="/register"
             className="ml-2 font-bold text-purple-600 hover:text-purple-800"
           >
             Đăng ký

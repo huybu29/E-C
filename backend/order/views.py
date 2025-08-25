@@ -47,8 +47,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             total += item.product.price * item.quantity
 
         order.shipping_cost = Order.calculate_shipping_cost(shipping_method)
-        total += order.shipping_cost
-        order.total_price = total
+        order.total_price = sum(item.product.price * item.quantity for item in cart_items) + order.shipping_cost
         order.save()
 
         cart_items.delete()

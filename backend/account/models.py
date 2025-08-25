@@ -4,8 +4,9 @@ from django.contrib.auth.models import User
 
 class Profile(models.Model):
     ROLE_CHOICES = (
-        ('customer', 'Customer'),
+         ('customer', 'Customer'),
         ('seller', 'Seller'),
+        ('staff', 'Staff'),      
         ('admin', 'Admin'),
     )
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')

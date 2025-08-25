@@ -84,15 +84,27 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+from datetime import timedelta
 
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=12),   # mặc định 5 phút
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=30),      # mặc định 1 ngày
+    "ROTATE_REFRESH_TOKENS": True,                    # cấp refresh mới khi refresh
+    "BLACKLIST_AFTER_ROTATION": True,                 # revoke refresh cũ khi rotate
+    "AUTH_HEADER_TYPES": ("Bearer",),
+}
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'Myshop_DB',       # tên database bạn vừa tạo
+        'USER': 'AD',        # user PostgreSQL
+        'PASSWORD': '12345678',# password user
+        'HOST': 'localhost',       # hoặc IP server PostgreSQL
+        'PORT': '5432',            # port mặc định của PostgreSQL
     }
 }
 

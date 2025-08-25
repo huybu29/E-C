@@ -10,7 +10,7 @@ export default function SellerOrderDetailPage() {
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
-    fetchOrder();
+    fetchOrder(); 
   }, []);
 
   const fetchOrder = async () => {

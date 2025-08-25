@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
@@ -54,25 +55,45 @@ export default function CartPage() {
 
   if (loading)
     return (
-      <p className="text-center text-purple-500 mt-6">
+      <p className="text-center text-purple-500 mt-6 animate-pulse">
         Đang tải giỏ hàng...
       </p>
     );
 
   return (
-    <div className="max-w-5xl mx-auto p-6 my-[100px] bg-gradient-to-br from-purple-50 via-white to-purple-100 min-h-screen rounded-2xl shadow-md">
-      <h1 className="text-3xl font-extrabold mb-8 text-purple-700 text-center">
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="max-w-5xl mx-auto p-6 my-[100px] bg-gradient-to-br from-purple-50 via-white to-purple-100 min-h-screen rounded-2xl shadow-md"
+    >
+      <h1 className="text-3xl font-extrabold mb-8 text-purple-700 text-center drop-shadow-md">
         🛒 Giỏ hàng của bạn
       </h1>
 
       {cartItems.length === 0 ? (
-        <p className="text-center text-purple-400">Giỏ hàng trống</p>
+        <div className="text-center py-20">
+          <p className="text-[75px] font-semibold text-purple-500 mb-4">
+            Giỏ hàng của bạn đang trống 😢
+          </p>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() => navigate("/")}
+            className="px-6 py-3 bg-purple-500 text-[50px] hover:bg-purple-600 text-white font-bold rounded-xl shadow-lg"
+          >
+            🛍️ Mua sắm ngay
+          </motion.button>
+        </div>
       ) : (
         <>
           <div className="space-y-4">
             {cartItems.map((item) => (
-              <div
+              <motion.div
                 key={item.id}
+                initial={{ opacity: 0, x: -30 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.4 }}
                 className="flex items-center bg-white rounded-2xl border border-purple-100 shadow-sm p-4 hover:shadow-md transition"
               >
                 <img
@@ -91,7 +112,7 @@ export default function CartPage() {
                   <div className="flex items-center mt-2">
                     <button
                       onClick={() => updateQuantity(item.id, -1)}
-                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded-l-lg hover:bg-purple-200"
+                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded-l-lg hover:bg-purple-200 transition"
                     >
                       -
                     </button>
@@ -100,7 +121,7 @@ export default function CartPage() {
                     </span>
                     <button
                       onClick={() => updateQuantity(item.id, 1)}
-                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded-r-lg hover:bg-purple-200"
+                      className="px-3 py-1 bg-purple-100 text-purple-600 rounded-r-lg hover:bg-purple-200 transition"
                     >
                       +
                     </button>
@@ -117,29 +138,36 @@ export default function CartPage() {
                     Xóa
                   </button>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
 
           {/* Tổng tiền */}
-          <div className="mt-6 bg-white rounded-2xl shadow p-4 flex justify-between items-center border-t-4 border-purple-300">
+          <motion.div
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="mt-6 bg-white rounded-2xl shadow p-4 flex justify-between items-center border-t-4 border-purple-400"
+          >
             <p className="text-lg font-semibold text-gray-700">Tổng cộng:</p>
-            <p className="text-xl font-bold text-purple-600">
+            <p className="text-2xl font-extrabold text-purple-600">
               {totalPrice.toLocaleString()} đ
             </p>
-          </div>
+          </motion.div>
 
           {/* Nút thanh toán */}
           <div className="mt-6 flex justify-end">
-            <button
-              className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-xl shadow-md transition"
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="px-8 py-3 bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 text-white font-bold rounded-xl shadow-lg transition"
               onClick={() => navigate("/checkout")}
             >
-              Thanh toán
-            </button>
+              💳 Thanh toán
+            </motion.button>
           </div>
         </>
       )}
-    </div>
+    </motion.div>
   );
 }

@@ -1,285 +1,188 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import api from "../../services/api";
-import Modal from "react-modal";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-export default function CheckoutPage() {
+export default function CartPage() {
   const [cartItems, setCartItems] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [provinces, setProvinces] = useState([]);
-  const [districts, setDistricts] = useState([]);
-  const [wards, setWards] = useState([]);
-
-  const [selectedProvince, setSelectedProvince] = useState("");
-  const [selectedDistrict, setSelectedDistrict] = useState("");
-  const [selectedWard, setSelectedWard] = useState("");
-  const [detailAddress, setDetailAddress] = useState("");
-
-  const [shippingMethod, setShippingMethod] = useState("");
-  const [finalAddress, setFinalAddress] = useState("");
+  const [showModal, setShowModal] = useState(false); // Trạng thái mở modal
   const navigate = useNavigate();
 
-  const shippingOptions = [
-    { id: "standard", name: "Giao hàng tiêu chuẩn (3-5 ngày)", cost: 30000 },
-    { id: "express", name: "Giao hàng nhanh (1-2 ngày)", cost: 50000 },
-    { id: "pickup", name: "Nhận tại cửa hàng", cost: 0 },
-  ];
-
   useEffect(() => {
+    const fetchCart = async () => {
+      try {
+        const res = await api.get("/cart/cart-items/");
+        setCartItems(res.data);
+      } catch (err) {
+        console.error("Lỗi lấy giỏ hàng:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
     fetchCart();
-    fetchProvinces();
   }, []);
 
-  const fetchCart = async () => {
+  const updateQuantity = async (id, change) => {
     try {
-      const res = await api.get("/cart/cart-items/");
-      setCartItems(res.data);
-      const total = res.data.reduce(
-        (sum, item) => sum + item.product.price * item.quantity,
-        0
+      const newQty = Math.max(
+        1,
+        cartItems.find((item) => item.id === id).quantity + change
       );
-      setTotalPrice(total);
-    } catch {
-      setError("Không thể lấy giỏ hàng");
-    } finally {
-      setLoading(false);
+      await api.patch(`/cart/cart-items/${id}/`, { quantity: newQty });
+      setCartItems((prev) =>
+        prev.map((item) =>
+          item.id === id ? { ...item, quantity: newQty } : item
+        )
+      );
+    } catch (err) {
+      console.error("Lỗi cập nhật số lượng:", err);
     }
   };
 
-  const fetchProvinces = async () => {
-    const res = await axios.get("https://provinces.open-api.vn/api/p/");
-    setProvinces(res.data);
-  };
-
-  const handleProvinceChange = async (code) => {
-    setSelectedProvince(code);
-    setSelectedDistrict("");
-    setSelectedWard("");
-    setDistricts([]);
-    setWards([]);
-    const res = await axios.get(
-      `https://provinces.open-api.vn/api/p/${code}?depth=2`
-    );
-    setDistricts(res.data.districts);
-  };
-
-  const handleDistrictChange = async (code) => {
-    setSelectedDistrict(code);
-    setSelectedWard("");
-    setWards([]);
-    const res = await axios.get(
-      `https://provinces.open-api.vn/api/d/${code}?depth=2`
-    );
-    setWards(res.data.wards);
-  };
-
-  const handleSaveAddress = () => {
-    const provinceName =
-      provinces.find((p) => p.code === selectedProvince)?.name || "";
-    const districtName =
-      districts.find((d) => d.code === selectedDistrict)?.name || "";
-    const wardName = wards.find((w) => w.code === selectedWard)?.name || "";
-
-    const fullAddress = `${detailAddress}, ${wardName}, ${districtName}, ${provinceName}`;
-    setFinalAddress(fullAddress);
-    setIsModalOpen(false);
-  };
-
-  const handlePlaceOrder = async () => {
-    if (cartItems.length === 0) return alert("Giỏ hàng trống");
-    if (!finalAddress) return alert("Chọn địa chỉ giao hàng");
-    if (!shippingMethod) return alert("Chọn phương thức vận chuyển");
-
+  const removeItem = async (id) => {
     try {
-      const orderData = {
-        address: finalAddress,
-        shipping_method: shippingMethod,
-        items: cartItems.map((item) => ({
-          product_id: item.product.id,
-          quantity: item.quantity,
-        })),
-        total_price: totalPrice,
-      };
-      await api.post("/order/orders/", orderData);
-      alert("Đặt hàng thành công!");
-    } catch {
-      alert("Đặt hàng thất bại, vui lòng thử lại.");
+      await api.delete(`/cart/cart-items/${id}/`);
+      setCartItems((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      console.error("Lỗi xóa sản phẩm:", err);
     }
+  };
+
+  const totalPrice = cartItems.reduce(
+    (sum, item) => sum + item.product.price * item.quantity,
+    0
+  );
+
+  const handleCheckout = () => {
+    // Ở đây có thể gọi API thanh toán, demo mình chỉ hiển thị modal
+    setShowModal(true);
   };
 
   if (loading)
-    return <p className="text-center mt-6 text-purple-500">Đang tải giỏ hàng...</p>;
-  if (error) return <p className="text-center mt-6 text-red-500">{error}</p>;
-  if (cartItems.length === 0)
-    return <p className="text-center mt-6 text-purple-300">Giỏ hàng của bạn đang trống.</p>;
+    return (
+      <p className="text-center text-purple-500 mt-6">
+        Đang tải giỏ hàng...
+      </p>
+    );
 
   return (
-    <div className="max-w-4xl mx-auto mt-[100px] p-6 bg-white rounded-2xl shadow-lg">
-      <h1 className="text-3xl font-bold mb-6 text-purple-700">Thanh toán</h1>
+    <div className="relative">
+      <div className="max-w-5xl mx-auto p-6 my-[100px] bg-gradient-to-br from-purple-50 via-white to-purple-100 min-h-screen rounded-2xl shadow-md">
+        <h1 className="text-3xl font-extrabold mb-8 text-purple-700 text-center">
+          🛒 Giỏ hàng của bạn
+        </h1>
 
-      {/* Danh sách sản phẩm */}
-      <div className="mb-8 overflow-x-auto">
-        <table className="min-w-full bg-white rounded-lg shadow divide-y divide-gray-200">
-          <thead className="bg-purple-100">
-            <tr>
-              <th className="px-4 py-2 text-left text-purple-700">Sản phẩm</th>
-              <th className="px-4 py-2 text-right text-purple-700">Đơn giá</th>
-              <th className="px-4 py-2 text-center text-purple-700">Số lượng</th>
-              <th className="px-4 py-2 text-right text-purple-700">Tổng</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {cartItems.map((item) => (
-              <tr key={item.id} className="hover:bg-purple-50 transition">
-                <td className="px-4 py-2 flex items-center gap-4">
+        {cartItems.length === 0 ? (
+          <div className="text-center">
+            <p className="text-purple-400 mb-4">Giỏ hàng trống</p>
+            <button
+              onClick={() => navigate("/")}
+              className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-xl shadow-md transition"
+            >
+              🛍️ Mua sắm ngay
+            </button>
+          </div>
+        ) : (
+          <>
+            <div className="space-y-4">
+              {cartItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center bg-white rounded-2xl border border-purple-100 shadow-sm p-4 hover:shadow-md transition"
+                >
                   <img
                     src={item.product.image}
                     alt={item.product.name}
-                    className="w-16 h-16 object-cover rounded border border-purple-200"
+                    className="w-20 h-20 object-cover rounded-lg border border-purple-200"
                   />
-                  <span className="text-purple-800 font-semibold">
-                    {item.product.name}
-                  </span>
-                </td>
-                <td className="px-4 py-2 text-right text-purple-600">
-                  {item.product.price.toLocaleString()} đ
-                </td>
-                <td className="px-4 py-2 text-center">{item.quantity}</td>
-                <td className="px-4 py-2 text-right font-bold text-purple-700">
-                  {(item.product.price * item.quantity).toLocaleString()} đ
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                  <div className="flex-1 ml-4">
+                    <h2 className="text-lg font-semibold text-gray-800">
+                      {item.product.name}
+                    </h2>
+                    <p className="text-purple-600 font-bold">
+                      {item.product.price.toLocaleString()} đ
+                    </p>
 
-        <div className="mt-4 text-right text-xl font-bold text-purple-700">
-          Tổng tiền: {totalPrice.toLocaleString()} đ
-        </div>
+                    <div className="flex items-center mt-2">
+                      <button
+                        onClick={() => updateQuantity(item.id, -1)}
+                        className="px-3 py-1 bg-purple-100 text-purple-600 rounded-l-lg hover:bg-purple-200"
+                      >
+                        -
+                      </button>
+                      <span className="px-4 py-1 border-t border-b text-gray-700">
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item.id, 1)}
+                        className="px-3 py-1 bg-purple-100 text-purple-600 rounded-r-lg hover:bg-purple-200"
+                      >
+                        +
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-800">
+                      {(item.product.price * item.quantity).toLocaleString()} đ
+                    </p>
+                    <button
+                      onClick={() => removeItem(item.id)}
+                      className="text-red-400 text-sm hover:underline mt-2"
+                    >
+                      Xóa
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tổng tiền */}
+            <div className="mt-6 bg-white rounded-2xl shadow p-4 flex justify-between items-center border-t-4 border-purple-300">
+              <p className="text-lg font-semibold text-gray-700">Tổng cộng:</p>
+              <p className="text-xl font-bold text-purple-600">
+                {totalPrice.toLocaleString()} đ
+              </p>
+            </div>
+
+            {/* Nút thanh toán */}
+            <div className="mt-6 flex justify-end">
+              <button
+                className="px-6 py-3 bg-purple-500 hover:bg-purple-600 text-white font-semibold rounded-xl shadow-md transition"
+                onClick={handleCheckout}
+              >
+                Thanh toán
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Chọn địa chỉ */}
-      <div className="mb-4">
-        <label className="block mb-1 font-semibold text-purple-700">Địa chỉ giao hàng:</label>
-        <div className="flex items-center gap-3">
-          <span className="text-gray-700">{finalAddress || "Chưa chọn"}</span>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="bg-gradient-to-r from-purple-400 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
-          >
-            Chọn địa chỉ
-          </button>
+      {/* Modal Thanh toán thành công */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          {/* Overlay mờ */}
+          <div className="absolute inset-0 bg-black bg-opacity-40 backdrop-blur-sm"></div>
+
+          {/* Hộp thông báo */}
+          <div className="relative bg-white p-6 rounded-2xl shadow-lg max-w-sm w-full text-center animate-fadeIn">
+            <h2 className="text-2xl font-bold text-green-600 mb-4">
+              ✅ Thanh toán thành công!
+            </h2>
+            <p className="text-gray-600 mb-6">
+              Cảm ơn bạn đã mua sắm. Đơn hàng của bạn đang được xử lý.
+            </p>
+            <button
+              onClick={() => {
+                setShowModal(false);
+                navigate("/");
+              }}
+              className="px-6 py-2 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md"
+            >
+              Về trang chủ
+            </button>
+          </div>
         </div>
-      </div>
-
-      {/* Phương thức vận chuyển */}
-      <div className="mb-4">
-        <label className="block mb-1 font-semibold text-purple-700">
-          Phương thức vận chuyển:
-        </label>
-        <select
-          value={shippingMethod}
-          onChange={(e) => setShippingMethod(e.target.value)}
-          className="w-full border border-purple-200 p-2 rounded"
-        >
-          <option value="">Chọn phương thức</option>
-          {shippingOptions.map((opt) => (
-            <option key={opt.id} value={opt.id}>
-              {opt.name} (+{opt.cost.toLocaleString()} đ)
-            </option>
-          ))}
-        </select>
-      </div>
-
-      {/* Nút đặt hàng */}
-      <button
-        onClick={() => {
-          handlePlaceOrder();
-          navigate("/order");
-        }}
-        className="bg-gradient-to-r from-purple-500 to-purple-700 hover:opacity-90 text-white font-semibold py-3 px-12 rounded-xl shadow mt-4 transition"
-      >
-        Đặt hàng
-      </button>
-
-      {/* Modal chọn địa chỉ */}
-      <Modal
-        isOpen={isModalOpen}
-        onRequestClose={() => setIsModalOpen(false)}
-        className="bg-white p-6 rounded-xl shadow-lg max-w-lg mx-auto mt-20"
-      >
-        <h2 className="text-xl font-bold mb-4 text-purple-700">
-          Chọn địa chỉ giao hàng
-        </h2>
-
-        <select
-          value={selectedProvince}
-          onChange={(e) => handleProvinceChange(Number(e.target.value))}
-          className="w-full border border-purple-200 p-2 mb-3 rounded"
-        >
-          <option value="">Chọn tỉnh/thành phố</option>
-          {provinces.map((p) => (
-            <option key={p.code} value={p.code}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={selectedDistrict}
-          onChange={(e) => handleDistrictChange(Number(e.target.value))}
-          className="w-full border border-purple-200 p-2 mb-3 rounded"
-          disabled={!selectedProvince}
-        >
-          <option value="">Chọn quận/huyện</option>
-          {districts.map((d) => (
-            <option key={d.code} value={d.code}>
-              {d.name}
-            </option>
-          ))}
-        </select>
-
-        <select
-          value={selectedWard}
-          onChange={(e) => setSelectedWard(Number(e.target.value))}
-          className="w-full border border-purple-200 p-2 mb-3 rounded"
-          disabled={!selectedDistrict}
-        >
-          <option value="">Chọn xã/phường</option>
-          {wards.map((w) => (
-            <option key={w.code} value={w.code}>
-              {w.name}
-            </option>
-          ))}
-        </select>
-
-        <textarea
-          value={detailAddress}
-          onChange={(e) => setDetailAddress(e.target.value)}
-          placeholder="Nhập số nhà, tên đường..."
-          className="w-full border border-purple-200 p-2 mb-3 rounded"
-        />
-
-        <div className="flex justify-end gap-3">
-          <button
-            onClick={() => setIsModalOpen(false)}
-            className="px-4 py-2 border rounded hover:bg-gray-100 transition"
-          >
-            Hủy
-          </button>
-          <button
-            onClick={handleSaveAddress}
-            className="bg-gradient-to-r from-purple-400 to-purple-600 text-white px-4 py-2 rounded-lg hover:opacity-90 transition"
-          >
-            Lưu
-          </button>
-        </div>
-      </Modal>
+      )}
     </div>
   );
 }

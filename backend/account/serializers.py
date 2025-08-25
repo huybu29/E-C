@@ -38,3 +38,7 @@ class SellerSerializer(serializers.ModelSerializer):
         seller = Seller.objects.create(user=user, **validated_data)
         return seller
 
+class AdminUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'email', 'is_active', 'is_staff', 'is_superuser']
