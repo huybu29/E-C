@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import API from "../../services/api";
-import SellerPage from "./SellerPage"; // Component có sidebar
+import SellerPage from "./SellerPage"; 
 import { Line, Doughnut } from "react-chartjs-2";
 import {
   Chart as ChartJS,
@@ -44,8 +44,10 @@ export default function SellerDashboard() {
     }
   };
 
-  if (loading) return <p>Đang tải...</p>;
-  if (!stats) return <p>Không có dữ liệu</p>;
+  if (loading)
+    return <p className="text-center mt-10 text-gray-400">Đang tải...</p>;
+  if (!stats)
+    return <p className="text-center mt-10 text-red-400">Không có dữ liệu</p>;
 
   const revenueData = {
     labels: stats.revenue_by_day.map((d) => d.date),
@@ -53,8 +55,8 @@ export default function SellerDashboard() {
       {
         label: "Doanh thu",
         data: stats.revenue_by_day.map((d) => d.revenue),
-        borderColor: "rgba(59,130,246,1)",
-        backgroundColor: "rgba(59,130,246,0.2)",
+        borderColor: "rgba(147,51,234,1)", // purple-600
+        backgroundColor: "rgba(147,51,234,0.2)",
         tension: 0.4,
       },
     ],
@@ -74,51 +76,50 @@ export default function SellerDashboard() {
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: {
-        position: "top",
-      },
-      title: {
-        display: false,
-      },
+      legend: { position: "top", labels: { color: "#E5E7EB" } }, // text-gray-200
+      title: { display: false },
+    },
+    scales: {
+      x: { ticks: { color: "#E5E7EB" }, grid: { color: "#374151" } },
+      y: { ticks: { color: "#E5E7EB" }, grid: { color: "#374151" } },
     },
   };
 
   return (
     <SellerPage>
-      {/* Main content bên phải sidebar */}
-      <div className="flex-1 p-6 bg-gray-50 min-h-screen">
-        <h1 className="text-2xl font-bold mb-6">Dashboard thống kê</h1>
+      <div className="flex-1 p-6 bg-gray-900 min-h-screen text-gray-100">
+        <h1 className="text-2xl font-bold mb-6 text-purple-400">Dashboard thống kê</h1>
 
         {/* Thống kê nhanh */}
         <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="p-4 bg-blue-100 rounded shadow">
-            <h2 className="text-lg font-semibold">Doanh thu hôm nay</h2>
-            <p className="text-xl font-bold">
+          <div className="p-4 bg-gray-800 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-200">Doanh thu hôm nay</h2>
+            <p className="text-xl font-bold text-green-400">
               {stats.revenue_by_day.at(-1)?.revenue ?? 0} ₫
             </p>
           </div>
-          <div className="p-4 bg-purple-100 rounded shadow">
-            <h2 className="text-lg font-semibold">Đơn hàng</h2>
-            <p className="text-xl font-bold">
+          <div className="p-4 bg-gray-800 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-200">Đơn hàng</h2>
+            <p className="text-xl font-bold text-blue-400">
               {stats.orders_by_status.reduce((sum, o) => sum + o.count, 0)}
             </p>
           </div>
-          <div className="p-4 bg-orange-100 rounded shadow">
-            <h2 className="text-lg font-semibold">Sản phẩm bán chạy</h2>
-            <p className="text-xl font-bold">{stats.top_products.length}</p>
+          <div className="p-4 bg-gray-800 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-200">Sản phẩm bán chạy</h2>
+            <p className="text-xl font-bold text-orange-400">{stats.top_products.length}</p>
           </div>
-          <div className="p-4 bg-green-100 rounded shadow">
-            <h2 className="text-lg font-semibold">Tổng sản phẩm</h2>
-            <p className="text-xl font-bold">
+          <div className="p-4 bg-gray-800 rounded shadow">
+            <h2 className="text-lg font-semibold text-gray-200">Tổng sản phẩm</h2>
+            <p className="text-xl font-bold text-purple-400">
               {stats.top_products.reduce((sum, p) => sum + p.quantity, 0)}
             </p>
           </div>
         </div>
 
         {/* Biểu đồ */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="p-4 bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-4 bg-gray-800 rounded shadow">
+            <h2 className="text-xl font-semibold mb-4 text-gray-200">
               Doanh thu 7 ngày gần nhất
             </h2>
             <Line
@@ -128,8 +129,10 @@ export default function SellerDashboard() {
             />
           </div>
 
-          <div className="p-4 bg-white rounded shadow">
-            <h2 className="text-xl font-semibold mb-4">Top sản phẩm bán chạy</h2>
+          <div className="p-4 bg-gray-800 rounded shadow">
+            <h2 className="text-xl font-semibold mb-4 text-gray-200">
+              Top sản phẩm bán chạy
+            </h2>
             <Doughnut
               key={JSON.stringify(topProductsData)}
               data={topProductsData}
@@ -141,4 +144,3 @@ export default function SellerDashboard() {
     </SellerPage>
   );
 }
-        

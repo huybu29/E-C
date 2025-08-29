@@ -13,7 +13,7 @@ import ProductDetail from "./pages/Cutomer/ProductDetail";
 import CheckoutPage from "./pages/Cutomer/Checkout";
 import OrderListPage from "./pages/Cutomer/Orders";
 import OrderDetailPage from "./pages/Cutomer/OrderDetail";
-
+import UserProfilePage from "./pages/Cutomer/ProfilePage";
 // Seller pages
 import SellerPage from "./pages/Seller/SellerPage";
 import SellerRegister from "./pages/Seller/SellerRegis";
@@ -23,25 +23,29 @@ import AddProduct from "./pages/Seller/AddProduct";
 import SellerOrdersPage from "./pages/Seller/SellerOrder";
 import SellerOrderDetailPage from "./pages/Seller/SellerOrdDetail";
 import SellerDashboardPage from "./pages/Seller/StatSeller";
-import SellerProductDashboard from "./pages/Seller/SellerProductDetail";
+
 
 // Auth
 import LoginPage from "./pages/Login";
-import RegisterPage from "./pages/Register";
+
 
 // Admin pages
-import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminPage from "./pages/Admin/AdminPage";
 import AdminUserManagement from "./pages/Admin/AdminUserManagement";
 import AdminProductManagement from "./pages/Admin/AdminProductManagement";
 import AdminOrderManagement from "./pages/Admin/AdminOrderManagement";
-import UserDetail from "./pages/Admin/AdminUserDetail";
+import UserDetail from "./pages/Admin/AdminUserDetail"
+import AdminOrderDetail from "./pages/Admin/AdminOrderDetail";
+import AdminProductDetail from "./pages/Admin/AdminProductDetail";
+import SystemStats from "./pages/Admin/AdminStatPage";
+
 function AppContent() {
   const location = useLocation();
 
   // Ẩn layout mặc định khi vào login/register/seller/admin
   const hideDefaultLayout =
     location.pathname === "/login" ||
-    location.pathname === "/register" ||
+    
     location.pathname.startsWith("/seller") ||
     location.pathname.startsWith("/admin");
 
@@ -54,8 +58,8 @@ function AppContent() {
     location.pathname.startsWith("/admin") ||
     location.pathname === "/checkout" ||
     location.pathname === "/cart" ||
-    location.pathname.startsWith("/order");
-
+    location.pathname.startsWith("/order") ||
+    location.pathname === "/profile";
   const hideSidebar =
     location.pathname === "/login" ||
     location.pathname === "/" ||
@@ -65,6 +69,7 @@ function AppContent() {
     location.pathname.startsWith("/admin") ||
     location.pathname === "/checkout" ||
     location.pathname === "/cart" ||
+    location.pathname === "/profile" ||
     location.pathname.startsWith("/order");
 
   return (
@@ -86,10 +91,10 @@ function AppContent() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/order" element={<OrderListPage />} />
         <Route path="/order/:id" element={<OrderDetailPage />} />
-
+        <Route path="/profile" element={<UserProfilePage />} />
         {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        
 
         {/* Seller routes */}
         <Route path="/seller/*" element={<SellerPage />} />
@@ -98,16 +103,19 @@ function AppContent() {
         <Route path="/seller/products/add" element={<AddProduct />} />
         <Route path="/seller/products" element={<ProductManagement />} />
         <Route path="/seller/orders" element={<SellerOrdersPage />} />
-        <Route path="/seller/orders/:id" element={<SellerOrderDetailPage />} />
+          <Route path="/seller/orders/:id" element={<SellerOrderDetailPage />} />
         <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
-        <Route path="/seller/products/dashboard/:id" element={<SellerProductDashboard />} />
+        
 
         {/* Admin routes */}
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/admin/users" element={<AdminUserManagement />} />
         <Route path="/admin/products" element={<AdminProductManagement />} />
         <Route path="/admin/orders" element={<AdminOrderManagement />} />
         <Route path="/admin/users/:userId" element={<UserDetail />} />
+        <Route path="admin/orders/:id" element={<AdminOrderDetail/>}></Route>
+        <Route path="/admin/products/:productId" element={<AdminProductDetail />} />
+        <Route path="/admin/stats/" element={<SystemStats />} />
         {/* Catch-all route */}
       </Routes>
     </>
@@ -118,7 +126,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Router>
-        <AppContent />
+        <AppContent />  
         <Footer />
       </Router>
     </AuthProvider>

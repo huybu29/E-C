@@ -13,8 +13,7 @@ from django.db.models import Sum, F
 from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
-from rest_framework.response import Response    
-
+from django.utils.dateparse import parse_datetime
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsSellerOrReadOnly]
@@ -25,11 +24,11 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        queryset = Product.objects.filter(is_active=True, status="approved")
+        queryset = Product.objects.filter(is_active=True)
         keyword = self.request.query_params.get('keyword')
         categories = self.request.query_params.get('categories')
         min_price = self.request.query_params.get('min_price')
-        max_price = self.request.query_params.get('max_price')  
+        max_price = self.request.query_params.get('max_price')
         rating = self.request.query_params.get('rating')
         sort = self.request.query_params.get('sort')  # filter ngang
 
@@ -56,7 +55,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         if sort == 'relevance':
             queryset = queryset.order_by('-id')  # mặc định
         elif sort == 'bestselling':
-            queryset = queryset.annotate(total_sold=Sum('orderitem__quantity')).order_by('-total_sold')
+           queryset = queryset.annotate(
+        total_sold=Sum(
+            'order_items__quantity',
+            filter=Q(order_items__order__status='delivered')
+        )
+    ).order_by('-total_sold')
         elif sort == 'newest':
             queryset = queryset.order_by('-created_at')
         elif sort == 'price_asc':
@@ -74,14 +78,62 @@ class ProductViewSet(viewsets.ModelViewSet):
 class SellerProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
-    
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ["price", "updated_at", "average_rating", "stock", "name"]  
+    ordering = ["-updated_at"]  # mặc định mới nhất lên đầu
 
     def get_queryset(self):
         try:
             seller = Seller.objects.get(user=self.request.user)
         except Seller.DoesNotExist:
             return Product.objects.none()
-        return Product.objects.filter(seller=seller)
+
+        qs = Product.objects.filter(seller=seller)
+
+        # --- Các bộ lọc thủ công ---
+        search = self.request.query_params.get("search")  # thêm search
+        category_id = self.request.query_params.get("category")
+        status = self.request.query_params.get("status")
+        min_price = self.request.query_params.get("min_price")
+        max_price = self.request.query_params.get("max_price")
+        min_stock = self.request.query_params.get("min_stock")
+        max_stock = self.request.query_params.get("max_stock")
+        is_active = self.request.query_params.get("is_active")
+        updated_after = self.request.query_params.get("updated_after")
+        updated_before = self.request.query_params.get("updated_before")
+        min_rating = self.request.query_params.get("min_rating")
+        max_rating = self.request.query_params.get("max_rating")
+
+        if search:
+            qs = qs.filter(name__icontains=search)  # filter search theo tên
+
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+        if status:
+            qs = qs.filter(status=status)
+        if min_price:
+            qs = qs.filter(price__gte=min_price)
+        if max_price:
+            qs = qs.filter(price__lte=max_price)
+        if min_stock:
+            qs = qs.filter(stock__gte=min_stock)
+        if max_stock:
+            qs = qs.filter(stock__lte=max_stock)
+        if is_active is not None:
+            if is_active.lower() in ["true", "1"]:
+                qs = qs.filter(is_active=True)
+            elif is_active.lower() in ["false", "0"]:
+                qs = qs.filter(is_active=False)
+        if updated_after:
+            qs = qs.filter(updated_at__gte=updated_after)
+        if updated_before:
+            qs = qs.filter(updated_at__lte=updated_before)
+        if min_rating:
+            qs = qs.filter(average_rating__gte=min_rating)
+        if max_rating:
+            qs = qs.filter(average_rating__lte=max_rating)
+
+        return qs
 
     def perform_update(self, serializer):
         product = self.get_object()
@@ -91,7 +143,7 @@ class SellerProductViewSet(viewsets.ModelViewSet):
             raise PermissionDenied("Bạn không phải là người bán.")
         if product.seller != seller:
             raise PermissionDenied("Bạn không có quyền sửa sản phẩm này.")
-        serializer.save(seller=seller, status="pending")
+        serializer.save()
 
     def perform_create(self, serializer):
         try:
@@ -103,7 +155,7 @@ class SellerProductViewSet(viewsets.ModelViewSet):
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
-
+    
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -112,13 +164,19 @@ class ReviewViewSet(viewsets.ModelViewSet):
         if product_id:
             return Review.objects.filter(product_id=product_id)
         return Review.objects.all()
-
-    @action(detail=True, methods=["post"], url_path="reply")
+    @action(detail=True, methods=["patch"], url_path="reply", permission_classes=[IsAuthenticated])
     def reply(self, request, pk=None):
         review = self.get_object()
-        reply_text = request.data.get("reply")
-        if not reply_text:
-            return Response({"error": "Nội dung reply không được để trống"}, status=400)
+        try:
+            seller = Seller.objects.get(user=request.user)
+        except Seller.DoesNotExist:
+            raise PermissionDenied("Bạn không phải là seller.")
+
+        if review.product.seller != seller:
+            raise PermissionDenied("Bạn không có quyền trả lời review này.")
+
+        reply_text = request.data.get("reply", "")
         review.reply = reply_text
         review.save()
-        return Response(self.get_serializer(review).data)
+        serializer = self.get_serializer(review)
+        return Response(serializer.data, status=status.HTTP_200_OK)

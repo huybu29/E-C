@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import api from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 
 export default function OrderListPage() {
   const [orders, setOrders] = useState([]);
@@ -29,8 +30,20 @@ export default function OrderListPage() {
     return <p className="text-center mt-6">Bạn chưa có đơn hàng nào.</p>;
 
   return (
-    <div className="max-w-6xl my-[100px] mx-auto p-8 bg-white rounded-2xl shadow-lg">
-      <h1 className="text-3xl font-bold mb-8 text-gray-900">🛒 Danh sách đơn hàng</h1>
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      className="max-w-6xl my-[100px] mx-auto p-8 bg-white rounded-2xl shadow-lg"
+    >
+      <motion.h1
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="text-3xl font-bold mb-8 text-gray-900"
+      >
+        🛒 Danh sách đơn hàng
+      </motion.h1>
 
       <div className="overflow-x-auto rounded-lg shadow-md">
         <table className="w-full text-sm text-left text-gray-700">
@@ -44,10 +57,14 @@ export default function OrderListPage() {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {orders.map((order) => (
-              <tr
+            {orders.map((order, index) => (
+              <motion.tr
                 key={order.id}
-                className="hover:bg-purple-50 transition cursor-pointer"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, backgroundColor: "#f9f5ff" }}
+                className="cursor-pointer"
               >
                 <td className="px-6 py-3">{order.id}</td>
                 <td className="px-6 py-3">
@@ -70,18 +87,20 @@ export default function OrderListPage() {
                   </span>
                 </td>
                 <td className="px-6 py-3 text-center">
-                  <button
+                  <motion.button
+                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1.05 }}
                     onClick={() => navigate(`/order/${order.id}`)}
                     className="px-3 py-1.5 text-sm bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-lg shadow hover:opacity-90 transition"
                   >
                     Xem chi tiết
-                  </button>
+                  </motion.button>
                 </td>
-              </tr>
+              </motion.tr>
             ))}
           </tbody>
         </table>
       </div>
-    </div>
+    </motion.div>
   );
 }

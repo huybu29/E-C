@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, OrderItem
+from .models import Order, OrderItem,Address
 
 class OrderItemInline(admin.TabularInline):  # Hoặc admin.StackedInline nếu muốn dạng khối
     model = OrderItem
@@ -14,3 +14,8 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]  # Thêm OrderItem vào trong Order
 
 admin.site.register(Order, OrderAdmin)
+class AdressAdmin(admin.ModelAdmin):
+    model = Address
+admin.site.register(Address,AdressAdmin)
+
+    

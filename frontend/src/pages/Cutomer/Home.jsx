@@ -9,34 +9,7 @@ import HorizontalFilter from "../../components/HorizontalFilter";
 const currencyVN = (v) => Number(v || 0).toLocaleString("vi-VN") + " VND";
 
 // Inline Star rating (không cần lib ngoài)
-function Stars({ value = 0, size = 16 }) {
-  const full = Math.floor(value);
-  const half = value - full >= 0.5;
-  const empty = 5 - full - (half ? 1 : 0);
-  const Star = ({ filled }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth="1.5">
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
-    </svg>
-  );
-  const HalfStar = () => (
-    <svg width={size} height={size} viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-      <defs>
-        <linearGradient id="half">
-          <stop offset="50%" stopColor="currentColor"/>
-          <stop offset="50%" stopColor="transparent"/>
-        </linearGradient>
-      </defs>
-      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="url(#half)" />
-    </svg>
-  );
-  return (
-    <div className="flex items-center gap-1 text-yellow-500">
-      {Array.from({ length: full }).map((_, i) => <Star key={"f"+i} filled />)}
-      {half && <HalfStar />}
-      {Array.from({ length: empty }).map((_, i) => <Star key={"e"+i} filled={false} />)}
-    </div>
-  );
-}
+
 
 // Skeleton card cho trạng thái loading
 function SkeletonCard() {
@@ -80,15 +53,18 @@ function ProductCard({ product, onClick, index }) {
           />
         </motion.div>
 
-        <h2 className="text-base md:text-lg font-semibold text-gray-800 mb-2 line-clamp-2 flex-1">
+        <h2 className="text-base md:text-lg font-semibold text-gray-800 mb-1 line-clamp-2 flex-1">
           {product.name}
         </h2>
 
+        {/* Tên shop */}
+        <p className="text-sm text-gray-500 mb-2">{product.shop_name || "Shop không xác định"}</p>
+
         <div className="flex items-center justify-between mb-4">
           <p className="text-[#52057B] font-bold text-lg">{currencyVN(product.price)}</p>
-          <div className="flex items-center gap-1">
-            <Stars value={Number(product.rating || 0)} />
-            <span className="text-xs text-gray-600">({product.rating?.toFixed?.(1) || "0.0"})</span>
+          <div className="flex items-center gap-1 text-gray-600 text-sm">
+            <span className="text-yellow-400">⭐</span>
+            <span>{product.average_rating || "0.0"}</span>
           </div>
         </div>
 
@@ -129,25 +105,29 @@ export default function HomePage() {
   }, [keyword, categories, minPrice, maxPrice, rating, sort, id]);
 
   const fetchProducts = async () => {
-    setLoading(true);
-    try {
-      const params = {
-        search: keyword || undefined,
-        categories: categories || undefined,
-        min_price: minPrice || undefined,
-        max_price: maxPrice || undefined,
-        rating: rating || undefined,
-        ordering: sort,
-      };
-      const res = await API.get("/product/", { params });
-      setProducts(res.data?.results || res.data || []);
-    } catch (err) {
-      console.error("Lỗi tải sản phẩm:", err);
-      setProducts([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  setLoading(true);
+  try {
+    const params = {
+      search: keyword || undefined,
+      categories: categories || undefined,
+      min_price: minPrice || undefined,
+      max_price: maxPrice || undefined,
+      rating: rating || undefined,
+      ordering: sort,
+    };
+    const res = await API.get("/product/", { params });
+    // Lọc chỉ những sản phẩm approved
+    const approvedProducts = (res.data?.results || res.data || []).filter(
+      (p) => p.status === "approved"
+    );
+    setProducts(approvedProducts);
+  } catch (err) {
+    console.error("Lỗi tải sản phẩm:", err);
+    setProducts([]);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchCategoryName = async (categoryId) => {
     try {
@@ -176,9 +156,9 @@ export default function HomePage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <div className="absolute inset-0 bg-gradient-to-r from-[#BC6FF1]/20 via-[#52057B]/10 to-transparent" />
+        <div className="absolute inset-10 bg-gradient-to-r from-[#BC6FF1]/20 via-[#52057B]/10 to-transparent" />
         <motion.h1
-          className="text-2xl sm:text-3xl font-extrabold text-blue-700 tracking-tight"
+          className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight"
           initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.1, duration: 0.5 }}
@@ -196,7 +176,7 @@ export default function HomePage() {
       </motion.div>
 
       {/* Filter ngang chỉ hiện ở trang /search */}
-      {location.pathname.startsWith("/search") && (
+       (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
@@ -205,7 +185,7 @@ export default function HomePage() {
         >
           <HorizontalFilter currentSort={sort} />
         </motion.div>
-      )}
+      )
 
       {/* Content */}
       <div className="min-h-[40vh]">

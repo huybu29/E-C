@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../services/AuthContext";
 import API from "../services/api";
 import { motion, AnimatePresence } from "framer-motion";
-
+import SellerRegister from "../pages/Seller/SellerRegis";
 export default function Navbar() {
   const { isLoggedIn, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -13,12 +13,14 @@ export default function Navbar() {
   const [showPromptModal, setShowPromptModal] = useState(false);
   const [showRegisterModal, setShowRegisterModal] = useState(false);
   const [isSeller, setIsSeller] = useState(false);
-
-  const user = {
+  const [user, setUser] = useState({
+    id: null,
     username: "UserName",
     avatar: "https://i.pravatar.cc/40",
-  };
-
+    is_staff: false,
+    is_superuser: false,
+  });
+  
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -37,21 +39,36 @@ export default function Navbar() {
       setKeyword("");
     }
   };
-
+  const fetchCurrentUser = async () => {
+    try {
+      const res = await API.get("/account/me/");
+     
+      setUser(res.data);
+    } catch {
+      setUser((prev) => ({ ...prev }));
+    }
+  };
+  
   const checkSellerStatus = async () => {
     try {
       const res = await API.get("/account/seller/");
+      
       const sellers = res.data;
-      const found = sellers.some((seller) => seller.user === user.id);
+      const found = sellers.some((seller) => Number(seller.user) === Number(user.id));
       setIsSeller(found);
     } catch {
       setIsSeller(false);
     }
   };
+   useEffect(() => {
+    if (isLoggedIn) {
+      fetchCurrentUser();
+    }
+  }, [isLoggedIn]);
 
   useEffect(() => {
-    if (isLoggedIn) checkSellerStatus();
-  }, [isLoggedIn]);
+    if (isLoggedIn && user.id) checkSellerStatus();
+  }, [isLoggedIn,user.id]);
 
   const handleSellerClick = () => {
     if (isSeller) navigate("/seller/dashboard");
@@ -109,14 +126,9 @@ export default function Navbar() {
                   to="/login"
                   className="px-3 py-2 rounded-md font-medium bg-gradient-to-r from-[#BC6FF1] to-[#52057B] hover:from-[#52057B] hover:to-[#000000] transition-all"
                 >
-                  Login
+                  Đăng nhập
                 </Link>
-                <Link
-                  to="/register"
-                  className="px-3 py-2 rounded-md font-medium bg-white text-[#52057B] border border-[#BC6FF1] hover:bg-gray-100 transition"
-                >
-                  Register
-                </Link>
+                
               </>
             ) : (
               <>
@@ -141,7 +153,7 @@ export default function Navbar() {
                   >
                     <motion.img
                       whileHover={{ rotate: 10 }}
-                      src={user.avatar}
+                      src={`https://ui-avatars.com/api/?name=${encodeURIComponent(user.username)}&background=52057B&color=fff&size=128&rounded=true`}
                       alt="avatar"
                       className="w-10 h-10 rounded-full border border-white"
                     />
@@ -172,11 +184,29 @@ export default function Navbar() {
                         className="absolute right-0 mt-2 w-44 bg-[#52057B] rounded-lg shadow-lg z-50 overflow-hidden"
                       >
                         <button
-                          onClick={handleSellerClick}
+                          onClick={() => navigate("/profile")}
                           className="w-full text-left px-4 py-2 text-white hover:bg-[#BC6FF1]/10"
                         >
-                          Trang người bán
+                          Hồ sơ
                         </button>
+                        
+                          <button
+                            onClick={handleSellerClick}
+                            className="w-full text-left px-4 py-2 text-white hover:bg-[#BC6FF1]/10"
+                          >
+                            Trang người bán
+                          </button>
+                        
+
+                        {/* Admin */}
+                        {(user.is_superuser ||user.is_staff) && (
+                          <button
+                            onClick={() => navigate("/admin/stats")}
+                            className="w-full text-left px-4 py-2 text-white hover:bg-[#BC6FF1]/10"
+                          >
+                            Quản trị hệ thống
+                          </button>
+                        )}
                         <button
                           onClick={handleLogout}
                           className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
@@ -255,7 +285,7 @@ export default function Navbar() {
               <h2 className="text-2xl font-bold mb-4 text-center">
                 Đăng ký làm Người bán
               </h2>
-              <SellerRegisterForm closeModal={() => setShowRegisterModal(false)} />
+              <SellerRegister closeModal={() => setShowRegisterModal(false)} />
             </motion.div>
           </motion.div>
         )}

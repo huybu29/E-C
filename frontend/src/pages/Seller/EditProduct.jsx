@@ -1,249 +1,232 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import API from "../../services/api";
-
-export default function EditProductPage() {
+import ReactStars from "react-stars";
+import SellerPage from "./SellerPage";
+import { useNavigate } from "react-router-dom";
+export default function SellerProductDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
-  const [product, setProduct] = useState({
-    name: "",
-    price: "",
-    stock: "",
-    description: "",
-    image: null,
-    imageUrl: "",
-  });
+  const [product, setProduct] = useState(null);
   const [reviews, setReviews] = useState([]);
-  const [reply, setReply] = useState({});
+  const [replyEditId, setReplyEditId] = useState(null);
+  const [replyText, setReplyText] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [categories, setCategories] = useState([]);
+  const navigate = useNavigate();
   useEffect(() => {
-    fetchProduct();
-    fetchReviews();
+    const fetchData = async () => {
+      try {
+        const [productRes, categoryRes, reviewRes] = await Promise.all([
+          API.get(`/product/${id}/`),
+          API.get("/category/categories/"),
+          API.get(`/product/reviews/?product=${id}`),
+        ]);
+        setProduct(productRes.data);
+        setCategories(categoryRes.data);
+        setReviews(reviewRes.data);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, [id]);
 
-  const fetchProduct = async () => {
-    try {
-      const res = await API.get(`/product/${id}/`);
-      setProduct({
-        name: res.data.name,
-        price: res.data.price,
-        stock: res.data.stock,
-        description: res.data.description || "",
-        image: null,
-        imageUrl: res.data.image,
-      });
-    } catch (err) {
-      console.error("Lỗi tải sản phẩm:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchReviews = async () => {
-    try {
-      const res = await API.get(`/product/reviews/?product=${id}`);
-      setReviews(res.data);
-    } catch (err) {
-      console.error("Lỗi tải đánh giá:", err);
-    }
-  };
-
-  const handleReplyChange = (reviewId, value) => {
-    setReply((prev) => ({ ...prev, [reviewId]: value }));
-  };
-
-  const handleReplySubmit = async (reviewId) => {
-    try {
-      await API.post(`/product/reviews/${reviewId}/reply/`, {
-        reply: reply[reviewId],
-      });
-      alert("Đã trả lời phản hồi!");
-      fetchReviews();
-      setReply((prev) => ({ ...prev, [reviewId]: "" }));
-    } catch (err) {
-      console.error("Lỗi gửi phản hồi:", err);
-      alert("Không thể gửi phản hồi");
-    }
-  };
+  if (loading || !product)
+    return (
+      <p className="text-center mt-10 text-gray-400">Đang tải dữ liệu...</p>
+    );
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setProduct((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const { name, value, files } = e.target;
     setProduct((prev) => ({
       ...prev,
-      image: file,
-      imageUrl: file ? URL.createObjectURL(file) : prev.imageUrl,
+      [name]: files ? files[0] : value,
+      ...(name === "image" && files ? { imageUrl: URL.createObjectURL(files[0]) } : {}),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const formData = new FormData();
-    formData.append("name", product.name);
-    formData.append("price", product.price);
-    formData.append("stock", product.stock);
-    formData.append("description", product.description);
-    if (product.image) formData.append("image", product.image);
-
+    const payload = {
+      name: product.name,
+      price: parseFloat(product.price),
+      stock: parseInt(product.stock, 10),
+      description: product.description,
+      status: product.status,
+      is_active: Boolean(product.is_active),
+      category: parseInt(product.category, 10),
+    };
     try {
-      await API.put(`/product/${id}/`, formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-      alert("Cập nhật sản phẩm thành công!");
+      await API.put(`/product/${id}/`, payload, { headers: { "Content-Type": "application/json" } });
       navigate("/seller/products");
     } catch (err) {
-      console.error("Lỗi cập nhật sản phẩm:", err);
+      console.error(err);
       alert("Cập nhật thất bại");
     }
   };
 
-  if (loading) return <p className="text-center mt-10 text-blue-700">Đang tải dữ liệu...</p>;
+  const handleReplySave = async (reviewId) => {
+    try {
+      await API.patch(`/product/reviews/${reviewId}/`, { reply: replyText });
+      setReplyEditId(null);
+      setReplyText("");
+      const res = await API.get(`/product/reviews/?product=${id}`);
+      setReviews(res.data);
+    } catch (err) {
+      console.error(err);
+      alert("Cập nhật phản hồi thất bại");
+    }
+  };
 
   return (
-    <div className="max-w-5xl mx-auto bg-white rounded-2xl shadow-lg p-6 mt-6">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-700">
-        ✏️ Chỉnh sửa sản phẩm & Quản lý đánh giá
-      </h1>
+    <SellerPage>
+    <div className="max-w-6xl mx-auto my-8 p-6 bg-gray-900 text-gray-100 rounded-2xl shadow-lg">
+      <h1 className="text-3xl font-bold mb-6 text-center text-purple-400">Chi tiết sản phẩm</h1>
 
-      {/* Form chỉnh sửa sản phẩm */}
-      <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
-        {/* Cột trái */}
-        <div className="space-y-4">
-          <div>
-            <label className="block font-semibold mb-1 text-blue-700">Tên sản phẩm</label>
-            <input
-              type="text"
-              name="name"
-              value={product.name}
-              onChange={handleChange}
-              className="border border-blue-200 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-300"
-              required
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* Hình ảnh */}
+        <div className="flex justify-center items-center">
+          {product.image && (
+            <img
+              src={product.image}
+              alt={product.name}
+              className="w-full max-w-md h-auto object-cover rounded-xl shadow-md"
             />
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1 text-blue-700">Giá (VND)</label>
-            <input
-              type="number"
-              name="price"
-              value={product.price}
-              onChange={handleChange}
-              className="border border-blue-200 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-300"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1 text-blue-700">Số lượng tồn</label>
-            <input
-              type="number"
-              name="stock"
-              value={product.stock}
-              onChange={handleChange}
-              className="border border-blue-200 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-300"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block font-semibold mb-1 text-blue-700">Mô tả</label>
-            <textarea
-              name="description"
-              value={product.description}
-              onChange={handleChange}
-              rows="5"
-              className="border border-blue-200 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-300"
-            ></textarea>
-          </div>
+          )}
         </div>
 
-        {/* Cột phải */}
-        <div className="space-y-4">
-          <div>
-            <label className="block font-semibold mb-1 text-blue-700">Ảnh sản phẩm</label>
-            {product.imageUrl && (
-              <img
-                src={product.imageUrl}
-                alt="Preview"
-                className="w-full h-64 object-cover rounded-lg border border-blue-200 mb-2 shadow"
+        {/* Thông tin & chỉnh sửa */}
+        <form className="space-y-4" onSubmit={handleSubmit}>
+          {[
+            { label: "Tên sản phẩm", key: "name" },
+            { label: "Mô tả", key: "description" },
+            { label: "Giá (VND)", key: "price" },
+            { label: "Số lượng tồn", key: "stock" },
+            { label: "Trạng thái", key: "status" },
+            { label: "Hoạt động", key: "is_active" },
+          ].map((field) => (
+            <div key={field.key}>
+              <label className="block font-semibold">{field.label}:</label>
+              <input
+                type={field.key === "price" || field.key === "stock" ? "number" : "text"}
+                name={field.key}
+                value={product[field.key] ?? ""}
+                onChange={handleChange}
+                className="border border-gray-700 rounded-lg p-2 w-full bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500"
               />
-            )}
+            </div>
+          ))}
+
+          <div>
+            <label className="block font-semibold">Danh mục:</label>
+            <select
+              name="category"
+              value={product.category || ""}
+              onChange={handleChange}
+              className="border border-gray-700 rounded-lg p-2 w-full bg-gray-800 text-gray-100 focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">-- Chọn danh mục --</option>
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block font-semibold">Ảnh sản phẩm:</label>
             <input
               type="file"
+              name="image"
               accept="image/*"
-              onChange={handleImageChange}
-              className="border border-blue-200 rounded-lg p-2 w-full focus:ring-2 focus:ring-blue-300"
+              onChange={handleChange}
+              className="border border-gray-700 rounded-lg p-2 w-full mt-1 bg-gray-800 text-gray-100"
             />
           </div>
-        </div>
 
-        {/* Nút submit */}
-        <div className="col-span-1 md:col-span-2 flex justify-end gap-4 mt-4">
-          <button
-            type="button"
-            onClick={() => navigate("/seller/products")}
-            className="px-4 py-2 bg-gray-400 text-white rounded-lg hover:bg-gray-300 transition"
-          >
-            Hủy
-          </button>
           <button
             type="submit"
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+            className="mt-4 w-full bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition"
           >
             Lưu thay đổi
           </button>
-        </div>
-      </form>
+        </form>
+      </div>
 
-      {/* Danh sách đánh giá */}
-      <div className="mt-8">
-        <h2 className="text-2xl font-bold text-blue-700 mb-4">⭐ Đánh giá của khách hàng</h2>
-        {reviews.length === 0 ? (
-          <p className="text-gray-500">Chưa có đánh giá nào.</p>
-        ) : (
-          <div className="space-y-6">
-            {reviews.map((r) => (
-              <div key={r.id} className="border p-4 rounded-lg shadow-sm">
-                <p className="font-semibold text-gray-800">
-                  {r.user_name} - <span className="text-yellow-500">{"★".repeat(r.rating)}</span>
-                </p>
-                <p className="text-gray-700 mt-1">{r.comment}</p>
+      {/* Thông tin rating */}
+      <div className="mt-6 p-4 bg-gray-800 rounded-xl shadow-inner">
+        <h2 className="text-xl font-semibold text-purple-400">Thông tin đánh giá</h2>
+        <p>Trung bình: <span className="text-yellow-400">{product.average_rating} ★</span></p>
+        <p>Tổng số review: {product.total_reviews}</p>
+      </div>
 
-                {/* Hiển thị phản hồi của seller */}
-                {r.reply && (
-                  <p className="mt-2 text-sm text-blue-600">
-                    💬 Phản hồi của bạn: {r.reply}
-                  </p>
-                )}
+      {/* Danh sách review */}
+      <div className="mt-6">
+        <h2 className="text-2xl font-bold mb-4 text-purple-400">Danh sách Review</h2>
+        {reviews.length === 0 && <p>Chưa có đánh giá nào</p>}
+        {reviews.map((review) => (
+          <div key={review.id} className="border p-4 rounded-lg mb-4 bg-gray-800">
+            <div className="flex justify-between items-center">
+              <strong>{review.user}</strong>
+              <ReactStars
+                count={5}
+                size={20}
+                value={parseFloat(review.rating)}
+                edit={false}
+                color2="#ffd700"
+              />
+            </div>
+            {review.comment && <p className="mt-1">{review.comment}</p>}
+            {review.image && (
+              <img src={review.image} alt="review" className="w-32 mt-2 rounded" />
+            )}
 
-                {/* Form trả lời */}
-                <div className="mt-2 flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Viết phản hồi..."
-                    value={reply[r.id] || ""}
-                    onChange={(e) => handleReplyChange(r.id, e.target.value)}
-                    className="flex-1 border rounded-lg p-2 text-sm"
-                  />
-                  <button
-                    onClick={() => handleReplySubmit(r.id)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700"
-                  >
-                    Gửi
-                  </button>
-                </div>
+            {replyEditId === review.id ? (
+              <div className="mt-2 flex gap-2">
+                <input
+                  type="text"
+                  value={replyText}
+                  onChange={(e) => setReplyText(e.target.value)}
+                  className="flex-1 border border-gray-700 rounded p-1 bg-gray-700 text-gray-100"
+                  placeholder="Nhập phản hồi..."
+                />
+                <button
+                  onClick={() => handleReplySave(review.id)}
+                  className="bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700"
+                >
+                  Lưu
+                </button>
+                <button
+                  onClick={() => setReplyEditId(null)}
+                  className="bg-gray-600 text-white px-3 py-1 rounded hover:bg-gray-700"
+                >
+                  Hủy
+                </button>
               </div>
-            ))}
+            ) : (
+              <div className="mt-2">
+                {review.reply && (
+                  <p className="text-green-400 italic">Phản hồi: {review.reply}</p>
+                )}
+                <button
+                  onClick={() => {
+                    setReplyEditId(review.id);
+                    setReplyText(review.reply || "");
+                  }}
+                  className="mt-1 text-sm text-purple-400 hover:underline"
+                >
+                  Trả lời
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        ))}
       </div>
     </div>
+   </SellerPage>
   );
 }
