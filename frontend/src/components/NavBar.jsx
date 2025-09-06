@@ -42,13 +42,21 @@ export default function Navbar() {
   const fetchCurrentUser = async () => {
     try {
       const res = await API.get("/account/me/");
-     
+      console.log(res.data)
       setUser(res.data);
     } catch {
       setUser((prev) => ({ ...prev }));
     }
   };
-  
+  const fetchSeller = async () => {
+    try {
+      const res = await API.get("/account/seller/");
+      console.log(res.data)
+      setUser(res.data);
+    } catch {
+      setUser((prev) => ({ ...prev }));
+    }
+  };
   const checkSellerStatus = async () => {
     try {
       const res = await API.get("/account/seller/");
@@ -63,6 +71,7 @@ export default function Navbar() {
    useEffect(() => {
     if (isLoggedIn) {
       fetchCurrentUser();
+      fetchSeller()
     }
   }, [isLoggedIn]);
 
@@ -278,6 +287,7 @@ export default function Navbar() {
             >
               <button
                 onClick={() => setShowRegisterModal(false)}
+                
                 className="absolute top-3 right-3 text-gray-500 hover:text-gray-700 font-bold text-xl"
               >
                 &times;
@@ -285,7 +295,8 @@ export default function Navbar() {
               <h2 className="text-2xl font-bold mb-4 text-center">
                 Đăng ký làm Người bán
               </h2>
-              <SellerRegister closeModal={() => setShowRegisterModal(false)} />
+              <SellerRegister closeModal={() =>{ setShowRegisterModal(false); }}
+               />
             </motion.div>
           </motion.div>
         )}

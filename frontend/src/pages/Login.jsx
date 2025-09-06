@@ -87,6 +87,7 @@ export default function Login() {
                 <input
                   type="text"
                   name="username"
+                  autoComplete="off"
                   value={form.username}
                   onChange={handleChange}
                   placeholder="Username"
@@ -95,6 +96,7 @@ export default function Login() {
                 />
                 <input
                   type="password"
+                  autoComplete="off"
                   name="password"
                   value={form.password}
                   onChange={handleChange}
@@ -183,6 +185,7 @@ export default function Login() {
               <form className="space-y-5" onSubmit={handleSubmit}>
                 <input
                   type="text"
+                  autoComplete="off"
                   name="username"
                   value={form.username}
                   onChange={handleChange}
@@ -194,6 +197,7 @@ export default function Login() {
                   type="email"
                   name="email"
                   value={form.email}
+                  autoComplete="off"
                   onChange={handleChange}
                   placeholder="Email"
                   required
@@ -203,6 +207,7 @@ export default function Login() {
                   type="password"
                   name="password"
                   value={form.password}
+                  autoComplete="off"
                   onChange={handleChange}
                   placeholder="Mật khẩu"
                   required

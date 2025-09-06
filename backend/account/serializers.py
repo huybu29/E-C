@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [ 'id',
             'username',
+            'password',
             'email',
             'is_staff',
             'is_superuser',
@@ -65,16 +66,15 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
 class SellerSerializer(serializers.ModelSerializer):
     class Meta:
         model = Seller
         fields = ['shop_name', 'phone', 'address','user']
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        return Seller.objects.create(user=user, **validated_data)
-
-
+        
+        return Seller.objects.create( **validated_data)
 class CurrentUserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
     seller = SellerSerializer(read_only=True)

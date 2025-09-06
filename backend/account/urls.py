@@ -5,7 +5,8 @@ from .views import ProfileViewSet, RegisterViewSet, SellerRegisterView, AdminOrd
 router = DefaultRouter()
 router.register(r'profiles', ProfileViewSet, basename='profile')
 router.register('register', RegisterViewSet, basename='register')
-router.register(r'seller', SellerRegisterView, basename='seller-register')
+
+router.register(r'seller', SellerRegisterView, basename="seller-register")
 router.register(r'admin/users', AdminUserViewSet, basename='admin-users')
 
 router.register(r'admin/products', AdminProductViewSet, basename='admin-products')

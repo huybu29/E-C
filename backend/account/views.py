@@ -2,7 +2,7 @@ from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.contrib.auth.models import User
 from .models import Profile, Seller
-from .serializers import ProfileSerializer, UserSerializer, SellerSerializer, AdminUserSerializer , ProfileUpdateSerializer
+from .serializers import ProfileSerializer, UserSerializer, AdminUserSerializer , ProfileUpdateSerializer, SellerSerializer
 from rest_framework.permissions import IsAdminUser
 from rest_framework import generics, permissions
 from rest_framework.views import APIView
@@ -66,13 +66,14 @@ class CurrentUserView(APIView):
             "is_staff": user.is_staff,
             "is_superuser": user.is_superuser,
         })
+
+
 class SellerRegisterView(viewsets.ModelViewSet):
     serializer_class = SellerSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         return Seller.objects.filter(user=self.request.user)
-
    
 class AdminUserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
