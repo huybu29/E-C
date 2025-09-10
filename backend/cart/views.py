@@ -40,9 +40,10 @@ class CartItemViewSet(viewsets.ModelViewSet):
             quantity = int(quantity)
         except (Product.DoesNotExist, ValueError):
             return Response({'error': 'Invalid product or quantity'}, status=status.HTTP_400_BAD_REQUEST)
-
+        if product.stock < quantity:
+            return Response({'error': 'Số lượng sản phẩm vượt quá tồn kho'}, status=status.HTTP_400_BAD_REQUEST)
         cart_item, created = CartItem.objects.get_or_create(cart=cart, product=product)
-
+        
         if not created:
             cart_item.quantity += quantity
         else:

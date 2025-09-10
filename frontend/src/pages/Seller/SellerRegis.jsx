@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import api from "../../services/api";
 
 export default function SellerRegister() {
@@ -6,7 +6,24 @@ export default function SellerRegister() {
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [message, setMessage] = useState("");
-
+  const [user, setUser] = useState({
+      id: null,
+      username: "UserName",
+      avatar: "https://i.pravatar.cc/40",
+      is_staff: false,
+      is_superuser: false,
+    });
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const res = await api.get("/account/me/");
+        setUser(res.data);
+      } catch (err) {
+        console.log("Không lấy được thông tin user:", err);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -14,7 +31,9 @@ export default function SellerRegister() {
         shop_name: shopName,
         phone,
         address,
+        user: user.id
       });
+      window.location.reload()
       setMessage("Đăng ký người bán thành công!");
     } catch (error) {
       setMessage("Lỗi khi đăng ký người bán.");

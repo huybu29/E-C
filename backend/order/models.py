@@ -45,6 +45,6 @@ class Address(models.Model):
     ward = models.CharField(max_length=100)
     detail_address = models.CharField(max_length=255)
     is_default = models.BooleanField(default=False)  # nếu muốn đánh dấu địa chỉ mặc định
-
+    
     def __str__(self):
         return f"{self.detail_address}, {self.ward}, {self.province}"

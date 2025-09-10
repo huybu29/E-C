@@ -27,9 +27,16 @@ export default function SystemStatsEnhanced() {
     revenue: 0,
     orderStatus: [],
     productCategories: [],
-    userGrowth: [],
-    revenuePerDay: [],
+    userGrowthByDay: [],
+    userGrowthByWeek: [],
+    userGrowthByMonth: [],
+    revenueByDay: [],
+    revenueByWeek: [],
+    revenueByMonth: [],
   });
+
+  const [userPeriod, setUserPeriod] = useState("day");
+  const [revenuePeriod, setRevenuePeriod] = useState("day");
 
   const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#00C49F"];
 
@@ -44,8 +51,12 @@ export default function SystemStatsEnhanced() {
         revenue: res.data.revenue,
         orderStatus: res.data.orderStatus || [],
         productCategories: res.data.productCategories || [],
-        userGrowth: res.data.userGrowth || [],
-        revenuePerDay: res.data.revenuePerDay || [],
+        userGrowthByDay: res.data.userGrowthByDay || [],
+        userGrowthByWeek: res.data.userGrowthByWeek || [],
+        userGrowthByMonth: res.data.userGrowthByMonth || [],
+        revenueByDay: res.data.revenueByDay || [],
+        revenueByWeek: res.data.revenueByWeek || [],
+        revenueByMonth: res.data.revenueByMonth || [],
       });
     } catch (err) {
       console.error(err);
@@ -80,6 +91,21 @@ export default function SystemStatsEnhanced() {
     }
     return null;
   };
+
+  // chọn dữ liệu hiển thị theo khoảng thời gian
+  const userGrowthData =
+    userPeriod === "day"
+      ? stats.userGrowthByDay
+      : userPeriod === "week"
+      ? stats.userGrowthByWeek
+      : stats.userGrowthByMonth;
+
+  const revenueData =
+    revenuePeriod === "day"
+      ? stats.revenueByDay
+      : revenuePeriod === "week"
+      ? stats.revenueByWeek
+      : stats.revenueByMonth;
 
   // Top cards
   const topCards = [
@@ -173,43 +199,69 @@ export default function SystemStatsEnhanced() {
             </ResponsiveContainer>
           </div>
 
-          {/* Bar chart: User growth (daily) */}
+          {/* Bar chart: User growth (toggle day/week/month) */}
           <div className="bg-[#2A083B] rounded-lg shadow-xl p-6 border border-[#4E1883] text-white md:col-span-2">
-            <h2 className="text-xl font-bold mb-4 text-purple-400">
-              User Growth (Daily)
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-purple-400">
+                User Growth ({userPeriod})
+              </h2>
+              <select
+                value={userPeriod}
+                onChange={(e) => setUserPeriod(e.target.value)}
+                className="bg-[#3B0A4F] border border-[#4E1883] rounded px-2 py-1"
+              >
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+              </select>
+            </div>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart
-                data={stats.userGrowth}
+              <LineChart
+                data={userGrowthData}
                 margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#4E1883" />
-                <XAxis dataKey="day" stroke="#fff" />
+                <XAxis dataKey={userPeriod} stroke="#fff" />
                 <YAxis stroke="#fff" />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend />
-                <Bar
+                <Line
+                  type="monotone"
                   dataKey="count"
-                  fill="#ffc658"
+                  name="New Users"
+                  stroke="#ffc658"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  activeDot={{ r: 6 }}
                   isAnimationActive
-                  animationDuration={800}
                 />
-              </BarChart>
+              </LineChart>
             </ResponsiveContainer>
           </div>
 
-          {/* Line chart: Revenue per day */}
+          {/* Line chart: Revenue (toggle day/week/month) */}
           <div className="bg-[#2A083B] rounded-lg shadow-xl p-6 border border-[#4E1883] text-white md:col-span-2">
-            <h2 className="text-xl font-bold mb-4 text-purple-400">
-              Revenue per Day (VND)
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-purple-400">
+                Revenue ({revenuePeriod})
+              </h2>
+              <select
+                value={revenuePeriod}
+                onChange={(e) => setRevenuePeriod(e.target.value)}
+                className="bg-[#3B0A4F] border border-[#4E1883] rounded px-2 py-1"
+              >
+                <option value="day">Day</option>
+                <option value="week">Week</option>
+                <option value="month">Month</option>
+              </select>
+            </div>
             <ResponsiveContainer width="100%" height={300}>
               <LineChart
-                data={stats.revenuePerDay}
+                data={revenueData}
                 margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="#4E1883" />
-                <XAxis dataKey="day" stroke="#fff" />
+                <XAxis dataKey={revenuePeriod} stroke="#fff" />
                 <YAxis
                   stroke="#fff"
                   tickFormatter={(value) => value.toLocaleString("vi-VN")}

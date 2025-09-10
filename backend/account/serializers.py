@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models import Profile, Seller
+from .models import Profile, Seller, Notification
 
 # Serializer cho User
 from rest_framework import serializers
@@ -17,6 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = [ 'id',
             'username',
+            'password',
             'email',
             'is_staff',
             'is_superuser',
@@ -39,14 +40,27 @@ class UserSerializer(serializers.ModelSerializer):
 class ProfileSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
+    avatar_url = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
-        fields = ['id', 'bio', 'avatar', 'role', 'user', 'username', 'email','phone_number','fullname']
+        fields = ['id', 'bio', 'avatar_url', 'role', 'user', 'username', 'email','phone_number','fullname']
+
+    def get_avatar_url(self, obj):
+        request = self.context.get('request')
+        if obj.avatar:  # Nếu có upload ảnh
+            avatar_url = obj.avatar.url
+            if request:
+                return request.build_absolute_uri(avatar_url)
+            return avatar_url
+        else:  # Nếu không có ảnh, trả về avatar từ ui-avatars
+            name = obj.user.username or obj.user.email or "User"
+            return f"https://ui-avatars.com/api/?name={name}&background=random&color=fff"
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username')
     email = serializers.EmailField(source='user.email')
-
+    
     class Meta:
         model = Profile
         fields = ['id','username', 'email', 'bio', 'avatar', 'role','fullname', 'phone_number']
@@ -65,16 +79,17 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
             setattr(instance, attr, value)
         instance.save()
         return instance
+
 class SellerSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source='user.username', read_only=True)
+
     class Meta:
         model = Seller
-        fields = ['shop_name', 'phone', 'address','user']
+        fields = ['id','username','shop_name', 'phone', 'address','user','is_approved','logo','banner','description','email_contact']
 
     def create(self, validated_data):
-        user = self.context['request'].user
-        return Seller.objects.create(user=user, **validated_data)
-
-
+        
+        return Seller.objects.create( **validated_data)
 class CurrentUserSerializer(serializers.ModelSerializer):
     profile = ProfileSerializer(read_only=True)
     seller = SellerSerializer(read_only=True)
@@ -98,3 +113,7 @@ class AdminUserSerializer(serializers.ModelSerializer):
             'is_active',
             'date_joined',
             'last_login']
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = "__all__"

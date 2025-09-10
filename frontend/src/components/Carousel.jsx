@@ -30,7 +30,7 @@ export default function CarouselBanner() {
   ];
 
   return (
-    <div className="max-w-screen mx-auto mt-[80px] px-4">
+    <div className="max-w-screen mx-auto mt-[80px] ">
       <div className="rounded-2xl shadow-xl ">
         <Slider {...sliderSettings}>
           {banners.map((banner, index) => (

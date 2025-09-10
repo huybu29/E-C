@@ -1,17 +1,16 @@
-// src/pages/HomePage.jsx
 import React, { useEffect, useState, useMemo } from "react";
-import { useNavigate, useSearchParams, useParams, useLocation } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
+import { motion, AnimatePresence, useAnimation, useMotionValue, useTransform } from "framer-motion";
 import API from "../../services/api";
 import HorizontalFilter from "../../components/HorizontalFilter";
+import { useTranslation } from "react-i18next";
+import { ShoppingCart, Star, Heart } from "lucide-react";
+import { Tooltip } from "react-tooltip"; // Nếu bạn dùng package tooltip
 
-// ====== Small helpers ======
+// ===== Helper =====
 const currencyVN = (v) => Number(v || 0).toLocaleString("vi-VN") + " VND";
 
-// Inline Star rating (không cần lib ngoài)
-
-
-// Skeleton card cho trạng thái loading
+// ===== Skeleton Card =====
 function SkeletonCard() {
   return (
     <div className="rounded-2xl p-[2px] bg-gradient-to-br from-[#BC6FF1] via-[#52057B] to-black">
@@ -25,63 +24,117 @@ function SkeletonCard() {
   );
 }
 
-// Card sản phẩm có animation
-function ProductCard({ product, onClick, index }) {
+// ===== Product Card =====
+function ProductCard({ product, onClick, index, t }) {
+  const isDiscounted = product.final_price && product.final_price < product.price;
+  const discountPercent = product.discount_percent;
+  const now = new Date();
+  const isDiscountActive =
+    product.discount_price &&
+    product.discount_start &&
+    product.discount_end &&
+    new Date(product.discount_start) <= now &&
+    new Date(product.discount_end) >= now;
+
+  const controls = useAnimation();
+
+  const handleAddToCart = () => {
+    // Shake effect nếu thêm thất bại
+    controls.start({
+      x: [0, -10, 10, -10, 10, 0],
+      transition: { duration: 0.5 },
+    });
+    onClick();
+  };
+
   return (
     <motion.div
       layout
-      onClick={onClick}
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       transition={{ delay: index * 0.05, duration: 0.35 }}
-      whileHover={{ scale: 1.03, rotate: 0.2 }}
-      className="bg-gradient-to-br from-[#BC6FF1] via-[#52057B] to-[#000000] rounded-2xl p-[2px] shadow-md hover:shadow-2xl cursor-pointer flex flex-col"
+      whileHover={{ scale: 1.03, rotate: 0.2, boxShadow: "0px 15px 25px rgba(0,0,0,0.3)" }}
+      className="bg-gradient-to-br from-[#BC6FF1] via-[#52057B] to-[#000000] rounded-2xl p-[2px] cursor-pointer flex flex-col"
     >
-      <div className="bg-purple-200 rounded-2xl p-4 flex flex-col h-full">
-        <motion.div className="relative overflow-hidden rounded-xl mb-4" whileHover={{ scale: 1.01 }}>
+      <motion.div
+        className="bg-purple-200 rounded-2xl p-4 flex flex-col h-full"
+        animate={controls}
+      >
+        <motion.div className="relative overflow-hidden rounded-xl mb-4" whileHover={{ scale: 1.02 }}>
           <img
             src={product.image || "https://via.placeholder.com/400x300?text=No+Image"}
             alt={product.name}
             className="w-full h-48 object-cover rounded-xl"
             loading="lazy"
           />
+          {isDiscounted && (
+            <motion.span
+              className="absolute top-2 left-2 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded"
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              -{discountPercent ? discountPercent + "%" : "SALE"}
+            </motion.span>
+          )}
           <motion.div
+            className="absolute bottom-2 right-2 flex gap-2"
             initial={{ opacity: 0 }}
             whileHover={{ opacity: 1 }}
-            className="absolute inset-0 bg-black/10"
-          />
+          >
+            <motion.div whileHover={{ scale: 1.3, rotate: [0, -10, 10, 0] }} transition={{ duration: 0.5 }}>
+              <Heart className="w-5 h-5 text-pink-500 cursor-pointer" />
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.3 }} transition={{ duration: 0.3 }}>
+              <ShoppingCart className="w-5 h-5 text-green-500 cursor-pointer" onClick={handleAddToCart} />
+            </motion.div>
+          </motion.div>
         </motion.div>
 
         <h2 className="text-base md:text-lg font-semibold text-gray-800 mb-1 line-clamp-2 flex-1">
           {product.name}
         </h2>
 
-        {/* Tên shop */}
-        <p className="text-sm text-gray-500 mb-2">{product.shop_name || "Shop không xác định"}</p>
+        <p className="text-sm text-gray-500 mb-2">{product.shop_name || t("shopUnknown")}</p>
 
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[#52057B] font-bold text-lg">{currencyVN(product.price)}</p>
+          <div className="flex flex-col">
+            {isDiscounted ? (
+              <>
+                <p className="text-red-600 font-bold text-lg">{currencyVN(product.final_price)}</p>
+                <p className="text-gray-500 line-through text-sm">{currencyVN(product.price)}</p>
+              </>
+            ) : (
+              <p className="text-[#52057B] font-bold text-lg">{currencyVN(product.price)}</p>
+            )}
+          </div>
+
           <div className="flex items-center gap-1 text-gray-600 text-sm">
-            <span className="text-yellow-400">⭐</span>
+            <motion.div whileHover={{ scale: 1.3, rotate: [0, -10, 10, 0] }} transition={{ duration: 0.5 }}>
+              <Star className="w-4 h-4 text-yellow-400" />
+            </motion.div>
             <span>{product.average_rating || "0.0"}</span>
           </div>
         </div>
 
         <motion.button
-          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          onClick={handleAddToCart}
           whileTap={{ scale: 0.96 }}
           whileHover={{ scale: 1.02 }}
-          className="mt-auto bg-gradient-to-r from-[#BC6FF1] to-[#52057B] text-white py-2 rounded-xl hover:from-[#52057B] hover:to-[#000000] font-medium focus:outline-none focus:ring-2 focus:ring-purple-400"
+          className="mt-auto bg-gradient-to-r from-[#BC6FF1] to-[#52057B] text-white py-2 rounded-xl hover:from-[#52057B] hover:to-[#000000] font-medium flex items-center justify-center gap-2"
         >
-          Xem chi tiết
+          {t("viewDetails")}
+          <ShoppingCart className="w-5 h-5" />
         </motion.button>
-      </div>
+      </motion.div>
     </motion.div>
   );
 }
 
+// ===== HomePage =====
 export default function HomePage() {
+  const { t } = useTranslation();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [categoryName, setCategoryName] = useState("");
@@ -89,7 +142,6 @@ export default function HomePage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { id } = useParams();
-  const location = useLocation();
 
   const keyword = searchParams.get("keyword") || "";
   const categories = searchParams.get("categories") || "";
@@ -98,43 +150,57 @@ export default function HomePage() {
   const rating = searchParams.get("rating") || "";
   const sort = searchParams.get("sort") || "-created_at";
 
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const pageSize = 10;
+
+  // ===== Scroll parallax =====
+  const scrollY = useMotionValue(0);
+  const parallax = useTransform(scrollY, [0, 300], [0, -50]);
+
+  useEffect(() => {
+    const handleScroll = () => scrollY.set(window.scrollY);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // ===== Fetch data =====
   useEffect(() => {
     fetchProducts();
     if (id) fetchCategoryName(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [keyword, categories, minPrice, maxPrice, rating, sort, id]);
+  }, [keyword, categories, minPrice, maxPrice, rating, sort, id, page]);
 
   const fetchProducts = async () => {
-  setLoading(true);
-  try {
-    const params = {
-      search: keyword || undefined,
-      categories: categories || undefined,
-      min_price: minPrice || undefined,
-      max_price: maxPrice || undefined,
-      rating: rating || undefined,
-      ordering: sort,
-    };
-    const res = await API.get("/product/", { params });
-    // Lọc chỉ những sản phẩm approved
-    const approvedProducts = (res.data?.results || res.data || []).filter(
-      (p) => p.status === "approved"
-    );
-    setProducts(approvedProducts);
-  } catch (err) {
-    console.error("Lỗi tải sản phẩm:", err);
-    setProducts([]);
-  } finally {
-    setLoading(false);
-  }
-};
+    setLoading(true);
+    try {
+      const params = {
+        search: keyword || undefined,
+        categories: categories || undefined,
+        min_price: minPrice || undefined,
+        max_price: maxPrice || undefined,
+        rating: rating || undefined,
+        ordering: sort,
+        page,
+        page_size: pageSize,
+      };
+      const res = await API.get("/product/", { params });
+      const approvedProducts = (res.data?.results || []).filter((p) => p.status === "approved");
+      setProducts(approvedProducts);
+      setTotalPages(Math.ceil((res.data.count || approvedProducts.length) / pageSize));
+    } catch (err) {
+      console.error("Error fetching products:", err);
+      setProducts([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchCategoryName = async (categoryId) => {
     try {
       const res = await API.get(`/category/categories/${categoryId}/`);
       setCategoryName(res.data?.name || "");
-    } catch (err) {
-      console.error("Lỗi tải tên danh mục:", err);
+    } catch {
       setCategoryName("");
     }
   };
@@ -142,77 +208,36 @@ export default function HomePage() {
   const viewProduct = (pid) => navigate(`/product/${pid}`);
 
   const titleText = useMemo(() => {
-    if (keyword) return `Kết quả cho “${keyword}”`;
-    if (id) return `Sản phẩm danh mục: ${categoryName || "Đang tải..."}`;
+    if (keyword) return `${t("noProducts")} “${keyword}”`;
+    if (id) return `Sản phẩm danh mục: ${categoryName || "..."}`;
     return "";
-  }, [keyword, id, categoryName]);
+  }, [keyword, id, categoryName, t]);
 
   return (
-    <div className="flex flex-col max-w-7xl py-10 mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Hero/Title với parallax nhẹ */}
+    <div className="flex flex-col max-w-7xl py-10 mx-auto mt-[80px] px-4 sm:px-6 lg:px-8">
+      {/* Hero Section */}
+
+
+      {/* Filter / Sort */}
       <motion.div
-        className="mt-[72px] mb-6 rounded-3xl relative overflow-hidden"
-        initial={{ opacity: 0, y: -10 }}
+        initial={{ opacity: 0, y: -6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+        transition={{ duration: 0.35 }}
+        className="mb-4"
       >
-        <div className="absolute inset-10 bg-gradient-to-r from-[#BC6FF1]/20 via-[#52057B]/10 to-transparent" />
-        <motion.h1
-          className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight"
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.1, duration: 0.5 }}
-        >
-          {titleText}
-        </motion.h1>
-        <motion.p
-          className="text-gray-600 mt-2"
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-        >
-         
-        </motion.p>
+        <HorizontalFilter currentSort={sort} />
       </motion.div>
 
-      {/* Filter ngang chỉ hiện ở trang /search */}
-       (
-        <motion.div
-          initial={{ opacity: 0, y: -6 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35 }}
-          className="mb-4"
-        >
-          <HorizontalFilter currentSort={sort} />
-        </motion.div>
-      )
-
-      {/* Content */}
+      {/* Products */}
       <div className="min-h-[40vh]">
-        {/* Loading skeleton */}
         {loading && (
-          <motion.div
-            layout
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6"
-            initial="hidden"
-            animate="show"
-            variants={{
-              hidden: { opacity: 0 },
-              show: { opacity: 1, transition: { staggerChildren: 0.07 } },
-            }}
-          >
+          <motion.div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
             {Array.from({ length: 10 }).map((_, i) => (
-              <motion.div
-                key={i}
-                variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }}
-              >
-                <SkeletonCard />
-              </motion.div>
+              <SkeletonCard key={i} />
             ))}
           </motion.div>
         )}
 
-        {/* Empty state */}
         {!loading && products.length === 0 && (
           <AnimatePresence>
             <motion.div
@@ -222,22 +247,11 @@ export default function HomePage() {
               exit={{ opacity: 0, y: -8 }}
               className="flex flex-col items-center justify-center text-center py-20"
             >
-              <svg width="120" height="120" viewBox="0 0 200 200" className="mb-4">
-                <circle cx="100" cy="100" r="80" fill="#E9D5FF" />
-                <rect x="60" y="70" width="80" height="60" rx="12" fill="#A78BFA" />
-                <circle cx="85" cy="100" r="8" fill="white" />
-                <circle cx="115" cy="100" r="8" fill="white" />
-                <rect x="85" y="120" width="30" height="6" rx="3" fill="#FFF" />
-              </svg>
-              <h3 className="text-xl font-semibold text-gray-800">Không có sản phẩm phù hợp</h3>
-              <p className="text-gray-600 mt-2">
-                Thử điều chỉnh bộ lọc, từ khóa hoặc sắp xếp khác nhé.
-              </p>
+              <h3 className="text-xl font-semibold text-gray-800">{t("noProducts")}</h3>
             </motion.div>
           </AnimatePresence>
         )}
 
-        {/* Grid sản phẩm */}
         {!loading && products.length > 0 && (
           <motion.div
             layout
@@ -251,42 +265,44 @@ export default function HomePage() {
           >
             <AnimatePresence>
               {products.map((p, idx) => (
-                <ProductCard key={p.id} product={p} index={idx} onClick={() => viewProduct(p.id)} />
+                <ProductCard key={p.id} product={p} index={idx} onClick={() => viewProduct(p.id)} t={t} />
               ))}
             </AnimatePresence>
           </motion.div>
         )}
-      </div>
 
-      {/* CTA strip dưới cùng */}
-      <motion.div
-        className="mt-10 mb-16 relative overflow-hidden rounded-2xl"
-        initial={{ opacity: 0, y: 8 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, amount: 0.2 }}
-        transition={{ duration: 0.45 }}
-      >
-        <div className="bg-gradient-to-r from-[#52057B] via-[#BC6FF1] to-[#52057B] p-[1px] rounded-2xl">
-          <div className="bg-white rounded-2xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h4 className="text-lg font-bold text-[#52057B]">Gợi ý hôm nay</h4>
-              <p className="text-gray-600">Lọc theo giá, đánh giá, và danh mục để tìm nhanh hơn.</p>
-            </div>
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex justify-center mt-8 gap-2">
             <motion.button
-              whileTap={{ scale: 0.96 }}
-              whileHover={{ scale: 1.03 }}
-              onClick={() => {
-                const params = new URLSearchParams(location.search);
-                if (!params.get("sort")) params.set("sort", "-created_at");
-                navigate(`/search?${params.toString()}`);
-              }}
-              className="bg-gradient-to-r from-[#BC6FF1] to-[#52057B] text-white px-5 py-2 rounded-xl font-medium"
+              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              disabled={page === 1}
+              whileHover={{ scale: 1.05 }}
+              className="px-3 py-1 bg-purple-200 rounded disabled:opacity-50"
             >
-              Mở bộ lọc
+              {t("prevPage")}
+            </motion.button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              <motion.button
+                key={p}
+                onClick={() => setPage(p)}
+                whileHover={{ scale: 1.05 }}
+                className={`px-3 py-1 rounded ${page === p ? "bg-purple-600 text-white" : "bg-purple-100"}`}
+              >
+                {p}
+              </motion.button>
+            ))}
+            <motion.button
+              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              disabled={page === totalPages}
+              whileHover={{ scale: 1.05 }}
+              className="px-3 py-1 bg-purple-200 rounded disabled:opacity-50"
+            >
+              {t("nextPage")}
             </motion.button>
           </div>
-        </div>
-      </motion.div>
+        )}
+      </div>
     </div>
   );
 }

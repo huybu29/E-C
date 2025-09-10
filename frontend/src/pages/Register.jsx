@@ -8,7 +8,7 @@ export default function () {
   const [form, setForm] = useState({ username: "", email: "", password: "" });
   const [message, setMessage] = useState({ text: "", type: "" });
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+  
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -86,11 +86,13 @@ export default function () {
                 <input
                   type="email"
                   placeholder="Email"
+                  autocomplete="off"
                   className="w-full px-4 py-3 border rounded-xl focus:outline-purple-500"
                 />
                 <input
                   type="password"
                   placeholder="Mật khẩu"
+                  autocomplete="off"
                   className="w-full px-4 py-3 border rounded-xl focus:outline-purple-500"
                 />
                 <button className="w-full py-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl shadow-md">
