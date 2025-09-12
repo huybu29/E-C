@@ -2,7 +2,8 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom"; 
 import api from "../services/api";
-import { Bell } from "lucide-react";
+import { Bell, CheckCircle, AlertCircle, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState([]);
@@ -16,7 +17,7 @@ export default function NotificationBell() {
       const res = await api.get("account/notifications/");
       let data = res.data;
 
-      // lọc theo URL hiện tại
+      // lọc theo role dựa trên URL
       if (location.pathname.startsWith("/admin/")) {
         data = data.filter((n) => n.target_role === "admin");
       } else if (location.pathname.startsWith("/seller")) {
@@ -24,7 +25,7 @@ export default function NotificationBell() {
       } else {
         data = data.filter((n) => n.target_role === "customer");
       }
-      
+
       setNotifications(data);
       setUnreadCount(data.filter((n) => !n.is_read).length);
     } catch (err) {
@@ -33,10 +34,8 @@ export default function NotificationBell() {
   };
 
   const handleClickNotification = async (n) => {
-    // nếu có link thì chuyển trang
     if (n.link) navigate(n.link);
 
-    // đánh dấu đã đọc nếu chưa đọc
     if (!n.is_read) {
       try {
         await api.patch(`account/notifications/${n.id}/`, { is_read: true });
@@ -51,8 +50,9 @@ export default function NotificationBell() {
       }
     }
 
-    setOpen(false); // đóng dropdown khi click
+    setOpen(false);
   };
+
 
   useEffect(() => {
     fetchNotifications();
@@ -60,10 +60,21 @@ export default function NotificationBell() {
     return () => clearInterval(interval);
   }, [location]);
 
+  const getIcon = (type) => {
+    switch (type) {
+      case "success":
+        return <CheckCircle className="text-green-500 w-5 h-5" />;
+      case "warning":
+        return <AlertCircle className="text-yellow-500 w-5 h-5" />;
+      default:
+        return <Info className="text-blue-500 w-5 h-5" />;
+    }
+  };
+
   return (
     <div className="relative">
       <button
-        className="relative p-2 rounded-full hover:bg-gray-500"
+        className="relative p-2 rounded-full hover:bg-gray-200 transition"
         onClick={() => setOpen(!open)}
       >
         <Bell />
@@ -74,29 +85,48 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {open && (
-        <div className="absolute right-0 mt-2 w-72 bg-white text-black border rounded-lg shadow-lg z-50">
-          <div className="p-2 font-bold border-b">Thông báo</div>
-          {notifications.length === 0 ? (
-            <div className="p-2 text-gray-500">Không có thông báo</div>
-          ) : (
-            notifications.map((n) => (
-              <div
-                key={n.id}
-                className={`p-2 border-b cursor-pointer ${
-                  n.is_read ? "bg-white" : "bg-gray-100"
-                } hover:bg-gray-200`}
-                onClick={() => handleClickNotification(n)}
-              >
-                <p>{n.message}</p>
-                <span className="text-xs text-gray-400">
-                  {new Date(n.created_at).toLocaleString()}
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      )}
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute right-0 mt-2 w-80 bg-white text-black border rounded-lg shadow-xl z-50"
+          >
+            <div className="flex justify-between items-center p-2 border-b">
+              <span className="font-bold">Thông báo</span>
+             
+            </div>
+
+            <div className="max-h-96 overflow-y-auto">
+              {notifications.length === 0 ? (
+                <div className="p-3 text-gray-500 text-center">
+                  Không có thông báo
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div
+                    key={n.id}
+                    className={`flex items-start gap-2 p-3 border-b cursor-pointer transition ${
+                      n.is_read ? "bg-white" : "bg-blue-50"
+                    } hover:bg-gray-100`}
+                    onClick={() => handleClickNotification(n)}
+                  >
+                    {getIcon(n.type)}
+                    <div className="flex-1">
+                      <p className="text-sm">{n.message}</p>
+                      <span className="text-xs text-gray-400">
+                        {new Date(n.created_at).toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

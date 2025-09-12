@@ -80,7 +80,7 @@ function AppContent() {
     <>
       {/* Layout mặc định (Customer) */}
       {!hideDefaultLayout && <NavBar />}
-      {!hideCarousel && <Carousel />}
+      
       <div className="float-left top-0 left-0">
         {!hideSidebar && <Sidebar />}
       </div>

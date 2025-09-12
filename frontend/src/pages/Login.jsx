@@ -22,9 +22,8 @@ export default function Login() {
   const handleChange = (e) =>
     setForm({ ...form, [e.target.name]: e.target.value });
 
-  // Validate password
   const validatePassword = (password) => {
-    const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/; // ít nhất 8 ký tự, chữ + số
+    const regex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
     return regex.test(password);
   };
 
@@ -35,7 +34,6 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        // === LOGIN ===
         const res = await api.post("/token/", {
           username: form.username,
           password: form.password,
@@ -44,7 +42,6 @@ export default function Login() {
         login(res.data.access);
         navigate("/");
       } else {
-        // === REGISTER ===
         if (form.password !== form.confirmPassword) {
           setMessage({ text: "Mật khẩu xác nhận không khớp!", type: "error" });
           setLoading(false);
@@ -86,12 +83,9 @@ export default function Login() {
     }
   };
 
-  // === GOOGLE LOGIN HANDLER ===
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
-      console.log("Google token:", credentialResponse.credential);
-      const token = credentialResponse.credential; // Google ID Token
-      // Gửi ID token lên API backend Django
+      const token = credentialResponse.credential;
       const res = await api.post("/account/auth/google/", { token });
       setTokens(res.data.access, res.data.refresh);
       login(res.data.access);
@@ -101,9 +95,9 @@ export default function Login() {
       setMessage({ text: "Đăng nhập Google thất bại!", type: "error" });
     }
   };
-  
+
   return (
-    <div className="w-screen h-screen flex overflow-hidden bg-gradient-to-r from-purple-200 to-pink-200">
+    <div className="w-screen h-screen flex overflow-hidden bg-gray-900 text-white">
       <motion.div
         className="flex w-[200vw] h-full"
         animate={{ x: isLogin ? "0vw" : "-100vw" }}
@@ -112,19 +106,19 @@ export default function Login() {
         {/* Layout Login */}
         <div className="w-screen h-full flex">
           <motion.div
-            className="w-1/2 flex items-center justify-center bg-white shadow-lg"
+            className="w-1/2 flex items-center justify-center bg-gray-800 shadow-lg"
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
           >
             <div className="w-2/3">
-              <h2 className="text-3xl font-bold text-purple-600 mb-6">
+              <h2 className="text-3xl font-bold text-purple-400 mb-6">
                 Đăng nhập
               </h2>
               {message.text && (
                 <p
                   className={`mb-4 text-sm font-medium ${
-                    message.type === "error" ? "text-red-500" : "text-green-600"
+                    message.type === "error" ? "text-red-500" : "text-green-400"
                   }`}
                 >
                   {message.text}
@@ -139,7 +133,7 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="Username"
                   required
-                  className="w-full px-4 py-3 border rounded-xl focus:outline-purple-500"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:outline-purple-400 text-white placeholder-gray-400"
                 />
                 <input
                   type="password"
@@ -149,7 +143,7 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="Mật khẩu"
                   required
-                  className="w-full px-4 py-3 border rounded-xl focus:outline-purple-500"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:outline-purple-400 text-white placeholder-gray-400"
                 />
                 <button
                   type="submit"
@@ -160,7 +154,6 @@ export default function Login() {
                 </button>
               </form>
 
-              {/* Nút Google Login */}
               <div className="mt-4 flex justify-center">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
@@ -170,11 +163,11 @@ export default function Login() {
                 />
               </div>
 
-              <p className="mt-6 text-sm text-gray-500">
+              <p className="mt-6 text-sm text-gray-400">
                 Chưa có tài khoản?{" "}
                 <button
                   onClick={() => setIsLogin(false)}
-                  className="text-purple-600 font-semibold hover:underline"
+                  className="text-purple-400 font-semibold hover:underline"
                 >
                   Đăng ký ngay
                 </button>
@@ -182,7 +175,7 @@ export default function Login() {
 
               <button
                 onClick={() => navigate("/")}
-                className="mt-4 w-full py-2 rounded-xl bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-800 font-semibold shadow"
+                className="mt-4 w-full py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold shadow"
               >
                 ← Trở về trang chủ
               </button>
@@ -190,7 +183,7 @@ export default function Login() {
           </motion.div>
 
           <motion.div
-            className="w-1/2 flex items-center justify-center bg-purple-100"
+            className="w-1/2 flex items-center justify-center bg-gray-900"
             initial={{ opacity: 0, x: 50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5 }}
@@ -205,7 +198,7 @@ export default function Login() {
 
         {/* Layout Register */}
         <div className="w-screen h-full flex">
-          <motion.div className="w-1/2 flex items-center justify-center bg-pink-100">
+          <motion.div className="w-1/2 flex items-center justify-center bg-gray-900">
             <img
               src="https://cdn-icons-png.flaticon.com/512/5087/5087589.png"
               alt="Register Illustration"
@@ -213,13 +206,13 @@ export default function Login() {
             />
           </motion.div>
 
-          <motion.div className="w-1/2 flex items-center justify-center bg-white shadow-lg">
+          <motion.div className="w-1/2 flex items-center justify-center bg-gray-800 shadow-lg">
             <div className="w-2/3">
-              <h2 className="text-3xl font-bold text-pink-600 mb-6">Đăng ký</h2>
+              <h2 className="text-3xl font-bold text-pink-400 mb-6">Đăng ký</h2>
               {message.text && (
                 <p
                   className={`mb-4 text-sm font-medium ${
-                    message.type === "error" ? "text-red-500" : "text-green-600"
+                    message.type === "error" ? "text-red-500" : "text-green-400"
                   }`}
                 >
                   {message.text}
@@ -233,7 +226,7 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="Username"
                   required
-                  className="w-full px-4 py-3 border rounded-xl focus:outline-pink-500"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:outline-pink-400 text-white placeholder-gray-400"
                 />
                 <input
                   type="email"
@@ -242,7 +235,7 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="Email"
                   required
-                  className="w-full px-4 py-3 border rounded-xl focus:outline-pink-500"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:outline-pink-400 text-white placeholder-gray-400"
                 />
                 <input
                   type="password"
@@ -251,7 +244,7 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="Mật khẩu"
                   required
-                  className="w-full px-4 py-3 border rounded-xl focus:outline-pink-500"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:outline-pink-400 text-white placeholder-gray-400"
                 />
                 <input
                   type="password"
@@ -260,7 +253,7 @@ export default function Login() {
                   onChange={handleChange}
                   placeholder="Xác nhận mật khẩu"
                   required
-                  className="w-full px-4 py-3 border rounded-xl focus:outline-pink-500"
+                  className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-xl focus:outline-pink-400 text-white placeholder-gray-400"
                 />
                 <button
                   type="submit"
@@ -271,11 +264,11 @@ export default function Login() {
                 </button>
               </form>
 
-              <p className="mt-6 text-sm text-gray-500">
+              <p className="mt-6 text-sm text-gray-400">
                 Đã có tài khoản?{" "}
                 <button
                   onClick={() => setIsLogin(true)}
-                  className="text-pink-600 font-semibold hover:underline"
+                  className="text-pink-400 font-semibold hover:underline"
                 >
                   Đăng nhập ngay
                 </button>
@@ -283,7 +276,7 @@ export default function Login() {
 
               <button
                 onClick={() => navigate("/")}
-                className="mt-4 w-full py-2 rounded-xl bg-gradient-to-r from-gray-300 to-gray-400 hover:from-gray-400 hover:to-gray-500 text-gray-800 font-semibold shadow "
+                className="mt-4 w-full py-2 rounded-xl bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold shadow "
               >
                 ← Trở về trang chủ
               </button>

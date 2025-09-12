@@ -72,7 +72,7 @@ export default function SideBar() {
       transition={{ duration: 0.6, ease: "easeOut" }}
       className=" left-0 top-0 h-full w-72 
                  bg-gradient-to-b from-purple-700 via-[#52057B] to-[#000000] 
-                 text-white shadow-2xl p-5 overflow-y-auto rounded-r-2xl"
+                 text-white shadow-2xl p-5 overflow-y-auto rounded-r-2xl mr-[50px] mt-5"
     >
       <motion.h2
         className="text-2xl font-bold mb-5"
