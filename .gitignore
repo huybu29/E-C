@@ -1,0 +1,12 @@
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Env
+env/
+
+# Node
+node_modules/
+
+# VSCode
+.vscode/
