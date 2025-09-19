@@ -67,6 +67,7 @@ export default function SellerOrdersPage() {
               <option value="processing">Đang xử lý</option>
               <option value="shipped">Đang giao</option>
               <option value="delivered">Đã giao</option>
+              <option value="canceled">Đã hủy</option> {/* ✅ Thêm canceled */}
             </select>
           </div>
         </div>
@@ -100,6 +101,7 @@ export default function SellerOrdersPage() {
                       {order.status === "processing" && <span className="px-2 py-1 rounded-full bg-blue-600 text-white font-semibold">Đang xử lý</span>}
                       {order.status === "shipped" && <span className="px-2 py-1 rounded-full bg-purple-600 text-white font-semibold">Đang giao</span>}
                       {order.status === "delivered" && <span className="px-2 py-1 rounded-full bg-green-600 text-white font-semibold">Đã giao</span>}
+                      {order.status === "canceled" && <span className="px-2 py-1 rounded-full bg-red-600 text-white font-semibold">Đã hủy</span>} {/* ✅ canceled */}
                     </td>
                     <td className="p-3 border-b border-gray-700">
                       <button

@@ -8,7 +8,7 @@ class ReviewInline(admin.TabularInline):
 class ProductAdmin(admin.ModelAdmin):
     list_display = ('id', 'name', 'description', 'price', 'stock', 'image', 
             'is_active', 'created_at', 'updated_at', 
-            'status', 'average_rating', 'total_reviews', )
+            'status', 'average_rating', 'total_reviews','discount_percent','discount_price','discount_start','discount_end') 
     search_fields = ('name',)  # Assuming you have a name field in your Product model
     inlines = [ReviewInline]
 admin.site.register(Product, ProductAdmin)

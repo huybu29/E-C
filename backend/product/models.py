@@ -23,9 +23,22 @@ class Product(models.Model):
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, default="pending")
     average_rating = models.DecimalField(max_digits=2, decimal_places=1, default=0.0)
     total_reviews = models.PositiveIntegerField(default=0)
+    discount_price = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    discount_percent = models.PositiveIntegerField(null=True, blank=True)
+    discount_start = models.DateTimeField(null=True, blank=True)
+    discount_end = models.DateTimeField(null=True, blank=True)
     def __str__(self):
         return self.name
-    
+    def get_final_price(self):
+            
+        now = timezone.now()
+        if self.discount_start and self.discount_end:
+            if self.discount_start <= now <= self.discount_end:
+                if self.discount_price and self.discount_price < self.price:
+                    return self.discount_price
+                if self.discount_percent and 0 < self.discount_percent <= 100:
+                    return self.price * (100 - self.discount_percent) / 100
+        return self.price
 class Review(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='reviews')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')

@@ -1,10 +1,11 @@
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import { useContext } from "react";
 import { AuthContext } from "../../services/AuthContext";
-import { Home, Package, ShoppingCart, BarChart2, LogOut } from "lucide-react";
+import { Home, Package, ShoppingCart, BarChart2, LogOut, User } from "lucide-react";
+import NotificationBell from "../../components/NotifiBell";
 
 export default function SellerPage({ children }) {
-  const { logout } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleLogout = () => {
@@ -57,19 +58,40 @@ export default function SellerPage({ children }) {
         >
           <BarChart2 size={18} /> Thống kê bán hàng
         </NavLink>
-
-        <button
-          onClick={handleLogout}
-          className="mt-auto flex items-center gap-2 px-4 py-2 bg-red-600 rounded-lg hover:bg-red-500 transition"
-        >
-          <LogOut size={18} /> Đăng xuất
-        </button>
       </aside>
 
       {/* Nội dung chính */}
-      <main className="flex-1 p-6 bg-gray-900">
-        {children || <Outlet />}
-      </main>
+      <div className="flex-1 flex flex-col">
+        {/* Thanh ngang trên */}
+        <header className="flex justify-between items-center px-6 py-3 border-b border-gray-700 bg-gray-800">
+          <div className="font-bold text-lg text-purple-400">WELCOME</div>
+          <div className="flex items-center gap-6">
+            {/* Thông báo */}
+            <NotificationBell />
+
+            {/* Hồ sơ người bán */}
+            <NavLink
+              to="/seller/profile"
+              className="flex items-center gap-2 px-3 py-1 rounded-lg hover:bg-gray-700"
+            >
+              <User size={18} /> Hồ sơ
+            </NavLink>
+
+            {/* Đăng xuất */}
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-3 py-1 bg-red-600 rounded-lg hover:bg-red-500 transition"
+            >
+              <LogOut size={18} /> Đăng xuất
+            </button>
+          </div>
+        </header>
+
+        {/* Nội dung */}
+        <main className="flex-1 p-6 bg-gray-900">
+          {children || <Outlet />}
+        </main>
+      </div>
     </div>
   );
 }

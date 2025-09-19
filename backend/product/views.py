@@ -5,7 +5,7 @@ from .serializers import ProductSerializer, ReviewSerializer
 from .permissions import IsSellerOrReadOnly
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
-from account.models import Seller
+from account.models import Seller, Notification
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions  import PermissionDenied
 from .models import Review
@@ -14,14 +14,30 @@ from django.db.models import Q
 from rest_framework.pagination import PageNumberPagination
 from rest_framework.decorators import action
 from django.utils.dateparse import parse_datetime
+from rest_framework import viewsets, filters
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from django.db.models import Q, Sum
+from rest_framework.pagination import PageNumberPagination
+from .models import Product, Seller
+from .serializers import ProductSerializer
+from .permissions import IsSellerOrReadOnly
+from account.models import Seller, Notification
+from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchVector, SearchRank
+# Pagination class
+class StandardResultsSetPagination(PageNumberPagination):
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsSellerOrReadOnly]
-   
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+
     search_fields = ['name']
-    ordering_fields = ['price', 'created_at']
-    ordering = ['-created_at']
+    
+    filter_backends = [filters.SearchFilter]  
+    pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
         queryset = Product.objects.filter(is_active=True)
@@ -30,37 +46,41 @@ class ProductViewSet(viewsets.ModelViewSet):
         min_price = self.request.query_params.get('min_price')
         max_price = self.request.query_params.get('max_price')
         rating = self.request.query_params.get('rating')
-        sort = self.request.query_params.get('sort')  # filter ngang
+        sort = self.request.query_params.get('sort')
 
-        # Search theo từ khóa
+        # Search
         if keyword:
             queryset = queryset.filter(Q(name__icontains=keyword))
 
-        # Filter theo categories
+        # Categories filter
         if categories:
-            ids = categories.split(',')
+            ids = [int(cid) for cid in categories.split(',') if cid.isdigit()]
             queryset = queryset.filter(category__id__in=ids)
 
-        # Filter theo khoảng giá
+        # Price filter
         if min_price:
             queryset = queryset.filter(price__gte=min_price)
         if max_price:
             queryset = queryset.filter(price__lte=max_price)
 
-        # Filter theo rating
+        # Rating filter
         if rating:
             queryset = queryset.filter(average_rating__gte=rating)
 
-        # Filter ngang (sort)
-        if sort == 'relevance':
-            queryset = queryset.order_by('-id')  # mặc định
+        # Sorting
+        if sort == 'relevance' and keyword:
+            queryset = queryset.annotate(
+                search=SearchVector('name', 'description'),
+            ).annotate(
+                rank=SearchRank(SearchVector('name', 'description'), keyword)
+            ).order_by('-rank')
         elif sort == 'bestselling':
-           queryset = queryset.annotate(
-        total_sold=Sum(
-            'order_items__quantity',
-            filter=Q(order_items__order__status='delivered')
-        )
-    ).order_by('-total_sold')
+            queryset = queryset.annotate(
+                total_sold=Sum(
+                    'order_items__quantity',
+                    filter=Q(order_items__order__status='delivered')
+                )
+            ).order_by('total_sold')
         elif sort == 'newest':
             queryset = queryset.order_by('-created_at')
         elif sort == 'price_asc':
@@ -73,7 +93,31 @@ class ProductViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         seller = Seller.objects.get(user=self.request.user)
         serializer.save(seller=seller)
+class PublicSellerProductViewSet(viewsets.ReadOnlyModelViewSet):
+   
+    serializer_class = ProductSerializer
+    
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = ["price", "updated_at", "average_rating", "stock", "name"]
+    ordering = ["-updated_at"]
 
+    def get_queryset(self):
+        seller_id = self.request.query_params.get("seller_id")
+        qs = Product.objects.all()
+
+        if seller_id:
+            qs = qs.filter(seller_id=seller_id, is_active=True)  # chỉ hiển thị sản phẩm đang hoạt động
+
+        # có thể reuse lại filter giống SellerProductViewSet nếu muốn
+        search = self.request.query_params.get("search")
+        category_id = self.request.query_params.get("category")
+
+        if search:
+            qs = qs.filter(name__icontains=search)
+        if category_id:
+            qs = qs.filter(category_id=category_id)
+
+        return qs
 
 class SellerProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
@@ -150,15 +194,32 @@ class SellerProductViewSet(viewsets.ModelViewSet):
             seller = Seller.objects.get(user=self.request.user)
         except Seller.DoesNotExist:
             raise PermissionDenied("Bạn chưa đăng ký làm người bán.")
-        serializer.save(seller=seller)
+
+       
+        product = serializer.save(seller=seller)
+
+        
+        admins = User.objects.filter(is_superuser=True)
+        for admin in admins:
+            Notification.objects.create(
+                user=admin,
+                target_role="admin",
+                title="Sản phẩm mới",
+                link=f"/admin/products/{product.id}",
+                message=f"{seller.user.username} vừa thêm sản phẩm {product.name}"
+            )
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
     serializer_class = ReviewSerializer
     
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
+        review = serializer.save(user=self.request.user)
+        Notification.objects.create(
+        user=review.product.seller.user,
+        title="Đánh giá mới",
+        message=f"Sản phẩm {review.product.name} vừa nhận được 1 đánh giá."
+    )
     def get_queryset(self):
         product_id = self.request.query_params.get("product")
         if product_id:
@@ -178,5 +239,14 @@ class ReviewViewSet(viewsets.ModelViewSet):
         reply_text = request.data.get("reply", "")
         review.reply = reply_text
         review.save()
+
+        # Gửi thông báo cho user đã review
+        Notification.objects.create(
+            user=review.user,
+            title="Phản hồi từ người bán",
+            message=f"Người bán {seller.shop_name} đã trả lời review của bạn về {review.product.name}."
+        )
+
         serializer = self.get_serializer(review)
         return Response(serializer.data, status=status.HTTP_200_OK)
+

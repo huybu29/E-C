@@ -28,6 +28,7 @@ ChartJS.register(
 export default function SellerDashboard() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState("day"); // "day" | "week" | "month"
 
   useEffect(() => {
     fetchStats();
@@ -49,12 +50,18 @@ export default function SellerDashboard() {
   if (!stats)
     return <p className="text-center mt-10 text-red-400">Không có dữ liệu</p>;
 
+  // Dữ liệu biểu đồ doanh thu tùy theo period
+  let revenueSource = [];
+  if (period === "day") revenueSource = stats.revenue_by_day;
+  if (period === "week") revenueSource = stats.revenue_by_week;
+  if (period === "month") revenueSource = stats.revenue_by_month;
+
   const revenueData = {
-    labels: stats.revenue_by_day.map((d) => d.date),
+    labels: revenueSource.map((d) => d.date || d.week || d.month),
     datasets: [
       {
         label: "Doanh thu",
-        data: stats.revenue_by_day.map((d) => d.revenue),
+        data: revenueSource.map((d) => d.revenue),
         borderColor: "rgba(147,51,234,1)", // purple-600
         backgroundColor: "rgba(147,51,234,0.2)",
         tension: 0.4,
@@ -76,7 +83,7 @@ export default function SellerDashboard() {
   const chartOptions = {
     responsive: true,
     plugins: {
-      legend: { position: "top", labels: { color: "#E5E7EB" } }, // text-gray-200
+      legend: { position: "top", labels: { color: "#E5E7EB" } },
       title: { display: false },
     },
     scales: {
@@ -119,11 +126,20 @@ export default function SellerDashboard() {
         {/* Biểu đồ */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="p-4 bg-gray-800 rounded shadow">
-            <h2 className="text-xl font-semibold mb-4 text-gray-200">
-              Doanh thu 7 ngày gần nhất
-            </h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold text-gray-200">Doanh thu</h2>
+              <select
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                className="bg-gray-700 text-white rounded px-2 py-1 border border-gray-600"
+              >
+                <option value="day">Theo ngày</option>
+                <option value="week">Theo tuần</option>
+                <option value="month">Theo tháng</option>
+              </select>
+            </div>
             <Line
-              key={JSON.stringify(revenueData)}
+              key={period}
               data={revenueData}
               options={chartOptions}
             />

@@ -45,10 +45,10 @@ INSTALLED_APPS = [
     'order',
     'cart',
     'category',
-    'shipping',
-    'payment'
+     
+    
 ]
-
+REST_USE_JWT = True 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework_simplejwt.authentication.JWTAuthentication',
@@ -151,3 +151,28 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# SMTP Gmail example
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "gotame297@gmail.com"
+EMAIL_HOST_PASSWORD = "ftuxogukqjxfxllo"  # dùng App Password (không dùng mật khẩu Gmail trực tiếp)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+GOOGLE_CLIENT_ID="505731603497-l5t49j3pmpkfevdb7bgoki9apruatk63.apps.googleusercontent.com"
+
+SOCIALACCOUNT_PROVIDERS = {
+    'facebook': {
+        'METHOD': 'oauth2',
+        'SDK_URL': 'https://connect.facebook.net/en_US/sdk.js',
+        'SCOPE': ['email', 'public_profile'],
+        'FIELDS': ['id', 'email', 'name', 'first_name', 'last_name'],
+        'AUTH_PARAMS': {'auth_type': 'reauthenticate'},
+        'INIT_PARAMS': {'cookie': True},
+        'LOCALE_FUNC': lambda request: 'en_US',
+        'VERIFIED_EMAIL': False,
+        'VERSION': 'v15.0',
+    }
+}
+SOCIAL_AUTH_FACEBOOK_KEY = "793959549662539"
+SOCIAL_AUTH_FACEBOOK_SECRET = "fbc448d499b611b66fc279e092b50d3a"

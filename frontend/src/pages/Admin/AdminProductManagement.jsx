@@ -10,10 +10,11 @@ export default function ProductManagement() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const navigate = useNavigate();
-
+  const currencyVN = (v) => Number(v || 0).toLocaleString("vi-VN") + " VND";
   // Fetch toàn bộ sản phẩm 1 lần
   const fetchProducts = () => {
-    api.get("/account/admin/products/")
+    api
+      .get("/account/admin/products/")
       .then((res) => {
         setAllProducts(res.data);
         setProducts(res.data);
@@ -80,6 +81,7 @@ export default function ProductManagement() {
             <thead>
               <tr className="bg-[#3B0A4F] text-white">
                 <th className="p-3 border border-[#4E1883]">ID</th>
+                <th className="p-3 border border-[#4E1883]">Image</th>
                 <th className="p-3 border border-[#4E1883]">Name</th>
                 <th className="p-3 border border-[#4E1883]">Price</th>
                 <th className="p-3 border border-[#4E1883]">Stock</th>
@@ -94,8 +96,19 @@ export default function ProductManagement() {
                   className="hover:bg-[#4E1883] transition cursor-pointer"
                 >
                   <td className="p-3 border border-[#4E1883] font-semibold">{p.id}</td>
+                  <td className="p-3 border border-[#4E1883]">
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        alt={p.name}
+                        className="w-16 h-16 object-cover rounded"
+                      />
+                    ) : (
+                      <span className="text-gray-400 italic">No image</span>
+                    )}
+                  </td>
                   <td className="p-3 border border-[#4E1883]">{p.name}</td>
-                  <td className="p-3 border border-[#4E1883]">${p.price}</td>
+                  <td className="p-3 border border-[#4E1883]">{currencyVN(p.price)}</td>
                   <td className="p-3 border border-[#4E1883]">{p.stock}</td>
                   <td className="p-3 border border-[#4E1883]">
                     <span
@@ -114,7 +127,7 @@ export default function ProductManagement() {
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center p-4 text-gray-400">
+                  <td colSpan={6} className="text-center p-4 text-gray-400">
                     Không có sản phẩm nào
                   </td>
                 </tr>

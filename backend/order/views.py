@@ -9,8 +9,8 @@ from django.db import transaction
 
 from .models import Order, OrderItem, Address
 from .serializers import OrderSerializer, OrderItemSerializer,AddressSerializer
-from product.models import Product   # 🔥 cần import
-from account.models import Seller
+from product.models import Product   
+from account.models import Seller, Notification
 
 
 # ------------------------ ORDER VIEWSET ------------------------
@@ -21,9 +21,7 @@ class OrderViewSet(viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
-        """
-        Tạo order và tự động tách đơn theo từng seller
-        """
+        
         data = request.data
         user = request.user
         items = data.get("items", [])
@@ -73,6 +71,21 @@ class OrderViewSet(viewsets.ModelViewSet):
 
             order.total_price = total_price + float(order.shipping_cost)
             order.save()
+            Notification.objects.create(
+                user=user,
+                target_role='customer',
+                link=f"/order/{order.id}/",
+                message=f"Bạn đã đặt hàng thành công, mã đơn: {order.id}"
+            )
+
+            # Thông báo cho seller
+            seller_user = order.seller.user
+            Notification.objects.create(
+                user=seller_user,
+                target_role='seller',
+                link=f"/seller/orders/{order.id}/",
+                message=f"Bạn có đơn hàng mới từ khách {user.username}, mã đơn: {order.id}"
+            )
             created_orders.append(order)
 
         serializer = self.get_serializer(created_orders, many=True)
@@ -90,7 +103,21 @@ class OrderViewSet(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         updated_status = serializer.validated_data.get('status', previous_status)
-
+        if previous_status != updated_status:
+            sellers = {item.product.seller for item in order.items.all()}
+            for seller in sellers:
+                Notification.objects.create(
+                    user=seller.user,
+                    target_role="seller",
+                    link=f"/seller/orders/{order.id}/",
+                    message=f"Đơn hàng #{order.id} từ khách {order.user.username} đã bị hủy."
+                )
+            Notification.objects.create(
+                user=order.user,
+                target_role='customer',
+                link=f"/order/{order.id}/",
+                message=f"Đơn hàng {order.id} đã chuyển sang trạng thái: {updated_status}"
+            )
         if previous_status != 'delivered' and updated_status == 'delivered':
             for item in order.items.all():
                 product = item.product
@@ -191,19 +218,64 @@ class SellerOrderDetailView(viewsets.ModelViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         updated_status = serializer.validated_data.get('status', previous_status)
-
+        if previous_status != updated_status:
+            if updated_status == "canceled":
+                if order.seller:  # đảm bảo đơn có seller
+                    Notification.objects.create(
+                        user=order.seller.user,
+                        target_role="seller",
+                        title="Đơn hàng đã bị hủy",
+                        link=f"/seller/orders/{order.id}/",
+                        message=f"Đơn hàng #{order.id} từ khách {order.user.username} đã bị hủy."
+                    )
+                else:
+                    # fallback: lấy seller từ order items
+                    sellers = {item.product.seller for item in order.items.all()}
+                    for seller in sellers:
+                        Notification.objects.create(
+                            user=seller.user,
+                            target_role="seller",
+                            title="Đơn hàng đã bị hủy",
+                            link=f"/seller/orders/{order.id}/",
+                            message=f"Đơn hàng #{order.id} từ khách {order.user.username} đã bị hủy."
+                        )
+            Notification.objects.create(
+                user=order.user,
+                title="Cập nhật đơn hàng",
+                link=f"/order/{order.id}/",
+                target_role="customer",
+                message=f"Đơn hàng #{order.id} đã được cập nhật sang trạng thái {updated_status}"
+            )
         if previous_status != 'delivered' and updated_status == 'delivered':
             for item in order.items.all():  # chỉ đơn của seller hiện tại
                 product = item.product
                 if product.stock < item.quantity:
                     raise PermissionDenied(f"Sản phẩm {product.name} không đủ tồn kho")
                 product.stock -= item.quantity
+                if product.stock < 20:
+                    Notification.objects.create(
+                        user=order.seller.user,
+                        target_role="seller",
+                        title="Cảnh báo tồn kho",
+                        message=f"Sản phẩm {product.name} sắp hết hàng. Chỉ còn {product.stock} sản phẩm trong kho."
+                    )
                 product.save()
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 # ------------------------ SELLER STATS ------------------------
+from django.db.models import Sum, Count, F
+from django.utils.timezone import now
+from datetime import timedelta
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+import calendar
+
+from .models import Seller, Order, OrderItem
+
+
 class SellerStatsView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -214,38 +286,98 @@ class SellerStatsView(APIView):
             return Response({"detail": "Bạn không phải là người bán."}, status=403)
 
         today = now().date()
-        last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
 
-        # Doanh thu theo ngày
+        # --------------------------
+        # 1. Doanh thu theo ngày (7 ngày gần nhất)
+        # --------------------------
+        last_7_days = [today - timedelta(days=i) for i in range(6, -1, -1)]
         revenue_by_day = []
         for day in last_7_days:
             total = (
                 OrderItem.objects.filter(
                     order__seller=seller,
                     order__created_at__date=day,
-                    order__status='delivered'
-                ).aggregate(total_revenue=Sum(F('price') * F('quantity')))['total_revenue'] or 0
+                    order__status="delivered",
+                ).aggregate(total_revenue=Sum(F("price") * F("quantity")))["total_revenue"]
+                or 0
             )
             revenue_by_day.append({"date": day.strftime("%Y-%m-%d"), "revenue": total})
 
-        # Đơn hàng theo trạng thái
+        # --------------------------
+        # 2. Doanh thu theo tuần (trong tháng hiện tại)
+        # --------------------------
+        first_day_of_month = today.replace(day=1)
+        weeks = []
+        revenue_by_week = []
+
+        # Xác định các tuần trong tháng
+        month_calendar = calendar.Calendar().monthdatescalendar(today.year, today.month)
+        for week in month_calendar:
+            # lấy tuần chứa ít nhất 1 ngày trong tháng hiện tại
+            if any(d.month == today.month for d in week):
+                start = max(week[0], first_day_of_month)
+                end = min(week[-1], today.replace(day=calendar.monthrange(today.year, today.month)[1]))
+                weeks.append((start, end))
+
+        # Tính doanh thu từng tuần
+        for idx, (start, end) in enumerate(weeks, 1):
+            total = (
+                OrderItem.objects.filter(
+                    order__seller=seller,
+                    order__created_at__date__range=(start, end),
+                    order__status="delivered",
+                ).aggregate(total_revenue=Sum(F("price") * F("quantity")))["total_revenue"]
+                or 0
+            )
+            revenue_by_week.append({"week": f"Tuần {idx}", "revenue": total})
+
+        # --------------------------
+        # 3. Doanh thu theo tháng (trong năm hiện tại)
+        # --------------------------
+        revenue_by_month = []
+        for month in range(1, 13):
+            start = today.replace(month=month, day=1)
+            end_day = calendar.monthrange(today.year, month)[1]
+            end = today.replace(month=month, day=end_day)
+            total = (
+                OrderItem.objects.filter(
+                    order__seller=seller,
+                    order__created_at__date__range=(start, end),
+                    order__status="delivered",
+                ).aggregate(total_revenue=Sum(F("price") * F("quantity")))["total_revenue"]
+                or 0
+            )
+            revenue_by_month.append({"month": month, "revenue": total})
+
+        # --------------------------
+        # 4. Đơn hàng theo trạng thái
+        # --------------------------
         orders_by_status = (
             Order.objects.filter(seller=seller)
-            .values('status')
-            .annotate(count=Count('id', distinct=True))
+            .values("status")
+            .annotate(count=Count("id", distinct=True))
         )
 
-        # Top sản phẩm
+        # --------------------------
+        # 5. Top sản phẩm bán chạy
+        # --------------------------
         top_products = (
-            OrderItem.objects.filter(order__seller=seller, order__status='delivered')
-            .values('product__name')
-            .annotate(quantity=Sum('quantity'))
-            .order_by('-quantity')[:5]
+            OrderItem.objects.filter(order__seller=seller, order__status="delivered")
+            .values("product__name")
+            .annotate(quantity=Sum("quantity"))
+            .order_by("-quantity")[:5]
         )
-        top_products = [{"name": p["product__name"], "quantity": p["quantity"]} for p in top_products]
+        top_products = [
+            {"name": p["product__name"], "quantity": p["quantity"]} for p in top_products
+        ]
 
-        return Response({
-            "revenue_by_day": revenue_by_day,
-            "orders_by_status": list(orders_by_status),
-            "top_products": top_products,
-        })
+        return Response(
+            {
+                "revenue_by_day": revenue_by_day,
+                "revenue_by_week": revenue_by_week,
+                "revenue_by_month": revenue_by_month,
+                "orders_by_status": list(orders_by_status),
+                "top_products": top_products,
+            }
+        )
+
