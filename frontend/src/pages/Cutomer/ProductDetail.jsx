@@ -10,8 +10,10 @@ import { ShoppingCart, ArrowRight } from "lucide-react";
 function SellerInfo({ seller }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-
   if (!seller) return null;
+  const avatarUrl = seller.logo 
+    || `https://ui-avatars.com/api/?name=${encodeURIComponent(seller.shop_name)}&background=52057B&color=fff&size=128&rounded=true`;
+  
 
   return (
     <motion.div
@@ -21,7 +23,7 @@ function SellerInfo({ seller }) {
       className="bg-white p-6 rounded-xl shadow-lg flex flex-col md:flex-row items-center gap-4 my-8"
     >
       <motion.img
-        src={seller.logo || "https://via.placeholder.com/80"}
+        src={avatarUrl}
         alt={seller.shop_name}
         className="w-20 h-20 rounded-full object-cover cursor-pointer"
         onClick={() => navigate(`/shop/${seller.id}`)}
@@ -37,7 +39,8 @@ function SellerInfo({ seller }) {
           </h3>
           <div className="flex items-center gap-4 mt-1 text-gray-600">
             <span>{t("soldProducts")}: {seller.total_sold || 0}</span>
-            <span>{t("averageRating")}: {seller.average_rating ? seller.average_rating.toFixed(1) : t("all")} ★</span>
+            <span>{t("averageRating")}: {seller.avg_rating ? seller.avg_rating.toFixed(1) : t("all")} ★</span>
+            <span>Sản phẩm đang bán: {seller.total_products || 0}</span>
           </div>
         </div>
         <motion.button
@@ -211,7 +214,8 @@ export default function ProductDetail() {
                 <motion.div key={review.id} initial={{opacity:0,y:20}} animate={{opacity:1,y:0}} transition={{delay:i*0.1}} className="p-4 border rounded-lg hover:shadow-md transition bg-[#BC6FF1]/10">
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-3">
-                      <img src={review.user.avatar_url} alt={review.username} className="w-10 h-10 rounded-full object-cover"/>
+                      <img src={review.user.avatar_url 
+    || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.user.username)}&background=52057B&color=fff&size=128&rounded=true`} alt={review.username} className="w-10 h-10 rounded-full object-cover"/>
                       <div>
                         <span className="font-semibold text-[#52057B]">{review.user.username}</span>
                         <p className="text-gray-500 text-sm">{new Date(review.created_at).toLocaleString()}</p>

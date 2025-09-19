@@ -2,11 +2,10 @@ import React, { useState } from "react";
 
 const slidesData = [
   { id: 1, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6214594.jpg" },
-  { id: 2, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6214594.jpg" },
-  { id: 3, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6214594.jpg" },
-  { id: 4, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6214594.jpg" },
-  { id: 5, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6214594.jpg" },
-  { id: 6, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6214594.jpg" },
+  { id: 2, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/2421.jpg" },
+  { id: 3, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/headphones-displayed-against-dark-background.jpg" },
+  { id: 4, name: "LUNDEV", des: "Tinh ru anh di chay pho...", image: "/6523712.jpg" },
+  
 ];
 
 export default function Slider() {
@@ -98,11 +97,7 @@ export default function Slider() {
             >
               {showContent && (
                 <div className="absolute top-1/2 left-24 transform -translate-y-1/2 text-white">
-                  <h2 className="text-4xl font-bold mb-4 fade-name">{slide.name}</h2>
-                  <p className="mb-4 fade-des">{slide.des}</p>
-                  <button className="px-4 py-2 bg-purple-600 rounded-lg hover:bg-purple-700 fade-btn">
-                    See More
-                  </button>
+                  
                 </div>
               )}
             </div>

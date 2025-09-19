@@ -140,7 +140,7 @@ export default function ShopPage() {
       {/* Header Shop */}
       <div className="flex flex-col md:flex-row items-center md:items-end justify-between bg-white p-6 rounded-2xl shadow-lg mb-8 gap-4">
         <img
-          src={seller?.logo || "https://via.placeholder.com/100"}
+          src={seller?.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(seller?.shop_name)}&background=52057B&color=fff&size=128&rounded=true`}
           alt={seller?.shop_name}
           className="w-24 h-24 rounded-full object-cover cursor-pointer"
           onClick={() => navigate(`/shop/${seller?.user}`)}
@@ -156,8 +156,9 @@ export default function ShopPage() {
           <div className="flex gap-6 mt-3 text-gray-600">
             <span>Sản phẩm đã bán: {seller?.total_sold || 0}</span>
             <span>
-              Đánh giá trung bình: {seller?.average_rating?.toFixed(1) || "Chưa có"} ★
+              Đánh giá trung bình: {seller?.avg_rating?.toFixed(1) || "Chưa có"} ★
             </span>
+            <span>Sản phẩm đang bán: {seller?.total_products || 0}</span>
           </div>
         </div>
         <button

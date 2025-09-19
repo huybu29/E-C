@@ -154,6 +154,7 @@ export default function CheckoutPage() {
     };
 
     try {
+      console.log("Order Data:", orderData);
       await api.post("/order/orders/", orderData);
       await Promise.all(
         cartItems.map((item) => api.delete(`/cart/cart-items/${item.id}/`))

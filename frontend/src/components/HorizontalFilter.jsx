@@ -15,13 +15,14 @@ export default function HorizontalFilter({ currentSort }) {
     navigate(`?${query.toString()}`);
   };
 
-  const filters = [
-    { label: t("filters.relevance"), value: "relevance" },
-    { label: t("filters.bestselling"), value: "-bestselling" },
-    { label: t("filters.newest"), value: "-created_at" },
-    { label: t("filters.priceAsc"), value: "price" },
-    { label: t("filters.priceDesc"), value: "-price" },
-  ];
+ const filters = [
+  { label: t("filters.relevance"), value: "relevance" },
+  { label: t("filters.bestselling"), value: "bestselling" },
+  { label: t("filters.newest"), value: "newest" },
+  { label: t("filters.priceAsc"), value: "price_asc" },
+  { label: t("filters.priceDesc"), value: "price_desc" },
+];
+
 
   return (
     <div className="flex items-center gap-3 mb-6 flex-nowrap overflow-x-auto scrollbar-hide py-2">

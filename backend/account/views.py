@@ -31,6 +31,7 @@ from django.db.models.functions import TruncMonth
 from rest_framework_simplejwt.tokens import RefreshToken
 from google.oauth2 import id_token
 from google.auth.transport import requests as google_requests
+from django.db.models import Avg, Count
 class ProfileViewSet(viewsets.ModelViewSet):
     queryset = Profile.objects.all()
     permission_classes = [IsAuthenticated]
@@ -175,8 +176,17 @@ class SellerRegisterView(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        # Chỉ hiện seller của user
-        return Seller.objects.all()
+        return (
+            Seller.objects.all()
+            .annotate(
+                total_products=Count("products", filter=Q(products__is_active=True),distinct=True),
+                avg_rating=Avg("products__reviews__rating"),
+                total_sold=Sum(
+                    "products__order_items__quantity",
+                    filter=Q(products__order_items__order__status="delivered")
+                )
+            )
+        )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

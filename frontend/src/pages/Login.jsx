@@ -222,6 +222,7 @@ export default function Login() {
                 <input
                   type="text"
                   name="username"
+                  autoComplete="off"
                   value={form.username}
                   onChange={handleChange}
                   placeholder="Username"
@@ -231,6 +232,7 @@ export default function Login() {
                 <input
                   type="email"
                   name="email"
+                  autoComplete="off"
                   value={form.email}
                   onChange={handleChange}
                   placeholder="Email"
@@ -240,6 +242,7 @@ export default function Login() {
                 <input
                   type="password"
                   name="password"
+                  autoComplete="off"
                   value={form.password}
                   onChange={handleChange}
                   placeholder="Mật khẩu"
@@ -249,6 +252,7 @@ export default function Login() {
                 <input
                   type="password"
                   name="confirmPassword"
+                  autoComplete="off"
                   value={form.confirmPassword}
                   onChange={handleChange}
                   placeholder="Xác nhận mật khẩu"

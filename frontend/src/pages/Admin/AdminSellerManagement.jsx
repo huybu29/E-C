@@ -32,7 +32,7 @@ export default function SellerManagement() {
 
   const handleApprove = async (sellerId) => {
     try {
-      await api.patch(`/account/admin/sellers/${sellerId}/approve/`);
+      await api.patch(`/account/admin/sellers/${sellerId}/`);
       setSellers(
         sellers.map((s) =>
           s.id === sellerId ? { ...s, is_approved: true } : s

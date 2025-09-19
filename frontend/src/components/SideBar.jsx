@@ -32,9 +32,12 @@ export default function SideBar() {
   };
 
   const toggleCategory = (id) => {
-    setSelectedCategories((prev) =>
-      prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id]
-    );
+    setSelectedCategories((prev) => {
+      const numId = Number(id);  // ép kiểu
+      return prev.includes(numId)
+        ? prev.filter((c) => c !== numId)
+        : [...prev, numId];
+    });
   };
 
   const applyFilter = () => {

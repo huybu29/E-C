@@ -23,6 +23,7 @@ from .serializers import ProductSerializer
 from .permissions import IsSellerOrReadOnly
 from account.models import Seller, Notification
 from django.contrib.auth.models import User
+from django.contrib.postgres.search import SearchVector, SearchRank
 # Pagination class
 class StandardResultsSetPagination(PageNumberPagination):
     page_size = 10
@@ -32,10 +33,10 @@ class StandardResultsSetPagination(PageNumberPagination):
 class ProductViewSet(viewsets.ModelViewSet):
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticatedOrReadOnly, IsSellerOrReadOnly]
-    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+
     search_fields = ['name']
-    ordering_fields = ['price', 'created_at']
-    ordering = ['-created_at']
+    
+    filter_backends = [filters.SearchFilter]  
     pagination_class = StandardResultsSetPagination
 
     def get_queryset(self):
@@ -67,15 +68,19 @@ class ProductViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(average_rating__gte=rating)
 
         # Sorting
-        if sort == 'relevance':
-            queryset = queryset.order_by('-id')
+        if sort == 'relevance' and keyword:
+            queryset = queryset.annotate(
+                search=SearchVector('name', 'description'),
+            ).annotate(
+                rank=SearchRank(SearchVector('name', 'description'), keyword)
+            ).order_by('-rank')
         elif sort == 'bestselling':
             queryset = queryset.annotate(
                 total_sold=Sum(
                     'order_items__quantity',
                     filter=Q(order_items__order__status='delivered')
                 )
-            ).order_by('-total_sold')
+            ).order_by('total_sold')
         elif sort == 'newest':
             queryset = queryset.order_by('-created_at')
         elif sort == 'price_asc':
@@ -244,4 +249,4 @@ class ReviewViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(review)
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+

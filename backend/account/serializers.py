@@ -82,10 +82,12 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
 
 class SellerSerializer(serializers.ModelSerializer):
     username = serializers.CharField(source='user.username', read_only=True)
-
+    total_products = serializers.IntegerField(read_only=True)
+    avg_rating = serializers.FloatField(read_only=True)
+    total_sold = serializers.IntegerField(read_only=True)
     class Meta:
         model = Seller
-        fields = ['id','username','shop_name', 'phone', 'address','user','is_approved','logo','banner','description','email_contact']
+        fields = ['id','username','shop_name', 'phone', 'address','user','is_approved','logo','banner','description','email_contact','total_products','avg_rating','total_sold']
 
     def create(self, validated_data):
         

@@ -78,13 +78,15 @@ function AppContent() {
     location.pathname.startsWith("/shop");
   return (
     <>
-      {/* Layout mặc định (Customer) */}
-      {!hideDefaultLayout && <NavBar />}
-      
-      <div className="float-left top-0 left-0">
-        {!hideSidebar && <Sidebar />}
-      </div>
+  {!hideDefaultLayout && <NavBar />}
 
+  <div className="flex">
+    {!hideSidebar && (
+      <div className="w-72 shrink-0">
+        <Sidebar />
+      </div>
+    )}
+    <div className="flex-1">
       <Routes>
         {/* Customer routes */}
         <Route path="/" element={<HomePage />} />
@@ -96,7 +98,6 @@ function AppContent() {
         <Route path="/order" element={<OrderListPage />} />
         <Route path="/order/:id" element={<OrderDetailPage />} />
         <Route path="/profile" element={<UserProfilePage />} />
-        {/* Auth */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/shop/:id" element={<ShopInfo />} />
 
@@ -107,7 +108,7 @@ function AppContent() {
         <Route path="/seller/products/add" element={<AddProduct />} />
         <Route path="/seller/products" element={<ProductManagement />} />
         <Route path="/seller/orders" element={<SellerOrdersPage />} />
-          <Route path="/seller/orders/:id" element={<SellerOrderDetailPage />} />
+        <Route path="/seller/orders/:id" element={<SellerOrderDetailPage />} />
         <Route path="/seller/dashboard" element={<SellerDashboardPage />} />
         <Route path="/seller/profile" element={<SellerProfile />} />
 
@@ -117,15 +118,16 @@ function AppContent() {
         <Route path="/admin/products" element={<AdminProductManagement />} />
         <Route path="/admin/orders" element={<AdminOrderManagement />} />
         <Route path="/admin/users/:userId" element={<UserDetail />} />
-        <Route path="admin/orders/:id" element={<AdminOrderDetail/>}></Route>
+        <Route path="admin/orders/:id" element={<AdminOrderDetail />} />
         <Route path="/admin/products/:productId" element={<AdminProductDetail />} />
         <Route path="/admin/stats/" element={<SystemStats />} />
         <Route path="/admin/sellers" element={<SellerManagement />} />
         <Route path="/admin/sellers/:id" element={<SellerDetail />} />
         <Route path="/admin/categories" element={<CategoryManagement />} />
-        {/* Catch-all route */}
       </Routes>
-    </>
+    </div>
+  </div>
+</>
   );
 }
 import { GoogleOAuthProvider } from "@react-oauth/google";

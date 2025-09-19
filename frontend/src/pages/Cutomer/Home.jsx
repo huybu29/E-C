@@ -3,11 +3,12 @@ import { motion, AnimatePresence, useAnimation } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { ShoppingCart, ArrowLeft, Star, Heart, CheckCircle } from "lucide-react";
-import { useNavigate, useParams, useSearchParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import API from "../../services/api";
 import HorizontalFilter from "../../components/HorizontalFilter";
 import Slider from "../../components/Carousel";
+
 gsap.registerPlugin(ScrollToPlugin);
 
 // ===== Helper =====
@@ -203,6 +204,7 @@ export default function HomePage() {
   const [isIntroView, setIsIntroView] = useState(true);
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -215,46 +217,34 @@ export default function HomePage() {
   const minPrice = searchParams.get("minPrice") || "";
   const maxPrice = searchParams.get("maxPrice") || "";
   const rating = searchParams.get("rating") || "";
-  const sort = searchParams.get("sort") || "-created_at";
+  const sort = searchParams.get("sort") || "newest";
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const pageSize = 10;
   const introContainerRef = useRef(null);
-  
-  // mock data
-  const mockProducts = useMemo(
-    () => [
-      {
-        id: 1,
-        name: "Sản phẩm A",
-        price: 500000,
-        image: "https://images.unsplash.com/photo-1542840939-550978939b4b?q=80&w=600"
-      },
-      {
-        id: 2,
-        name: "Sản phẩm B",
-        price: 300000,
-        final_price: 250000,
-        image: "https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?q=80&w=600"
-      },
-      {
-        id: 3,
-        name: "Sản phẩm C",
-        price: 800000,
-        image: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=600"
-      },
-      {
-        id: 4,
-        name: "Sản phẩm D",
-        price: 650000,
-        final_price: 600000,
-        image: "https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?q=80&w=600"
-      }
-    ],
-    []
-  );
 
-  const [activeProduct, setActiveProduct] = useState(mockProducts[0]);
+  // mock data
+ 
+
+  const [activeProduct, setActiveProduct] = useState(null);
+
+  // 🔹 Khi load trang, check localStorage intro
+  useEffect(() => {
+    const introShown = localStorage.getItem("introShown");
+    if (introShown === "true") {
+      setIsIntroView(false);
+    }
+  }, []);
+
+  const handleStartShopping = () => {
+    localStorage.setItem("introShown", "true");
+    setIsIntroView(false);
+  };
+
+  const handleBackToIntro = () => {
+    localStorage.removeItem("introShown");
+    setIsIntroView(true);
+  };
 
   const fetchProducts = async () => {
     setLoading(true);
@@ -265,7 +255,7 @@ export default function HomePage() {
         min_price: minPrice || undefined,
         max_price: maxPrice || undefined,
         rating: rating || undefined,
-        ordering: sort,
+        sort,
         page,
         page_size: pageSize
       };
@@ -299,10 +289,22 @@ export default function HomePage() {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
-
+  
   // smooth scroll GSAP cho intro
   useEffect(() => {
-    if (location.pathname.startsWith("/search") || location.pathname.startsWith("/product") || location.pathname === "/cart" || location.pathname === "/checkout" || location.pathname === "/profile" || location.pathname.startsWith("/order") || location.pathname.startsWith("/shop")) {setIsIntroView(false); }
+    
+    if (
+      location.pathname.startsWith("/search") ||
+      location.pathname.startsWith("/product") ||
+      location.pathname === "/cart" ||
+      location.pathname === "/checkout" ||
+      location.pathname === "/profile" ||
+      location.pathname.startsWith("/order") ||
+      location.pathname.startsWith("/shop")
+    ) {
+      setIsIntroView(false);
+    }
+
     if (!isIntroView) {
       fetchProducts();
       if (id) fetchCategoryName(id);
@@ -385,7 +387,7 @@ export default function HomePage() {
     playsInline
     className="absolute inset-0 w-full h-full object-cover"
   >
-    <source src="\public\PixVerse_V5_Image_Text_1080P_Seamless_infinite.mp4" />
+    <source src="\PixVerse_V5_Image_Text_1080P_Seamless_infinite.mp4" />
     Trình duyệt của bạn không hỗ trợ video.
   </video>
 
@@ -473,7 +475,7 @@ export default function HomePage() {
         </motion.button>
 
         {/* Filters */}
-        <HorizontalFilter />
+        <HorizontalFilter currentSort={sort} />
 
         
         
@@ -487,7 +489,7 @@ export default function HomePage() {
           </div>
         ) : (
           <AnimatePresence>
-            <HorizontalFilter></HorizontalFilter>
+            <HorizontalFilter currentSort={sort} />
             {products.length === 0 ? (
               <motion.p
                 initial={{ opacity: 0 }}
